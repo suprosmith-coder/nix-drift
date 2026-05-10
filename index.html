@@ -252,10 +252,28 @@
         <div class="spinner"></div>
     </div>
 
-    <script async src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module">
         import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/loaders/FBXLoader.js';
         import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/loaders/GLTFLoader.js';
+
+        // Wait for THREE to be available
+        function waitForTHREE() {
+            return new Promise((resolve) => {
+                if (window.THREE) {
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (window.THREE) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        }
+
+        await waitForTHREE();
 
         // ============================================
         // SCENE SETUP
@@ -350,21 +368,34 @@
 
             loadModel(url, isGLTF = false) {
                 const loader = isGLTF ? new GLTFLoader() : new FBXLoader();
-                loader.load(url, (data) => {
-                    const model = isGLTF ? data.scene : data;
-                    model.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-                    scene.remove(this.mesh);
-                    this.mesh = model;
-                    this.mesh.position.copy(this.position);
-                    this.mesh.rotation.y = this.rotation;
-                    scene.add(this.mesh);
-                    console.log('Vehicle model loaded');
-                });
+                console.log(`Loading model: ${url} (${isGLTF ? 'GLTF' : 'FBX'})`);
+                
+                loader.load(
+                    url,
+                    (data) => {
+                        console.log('Model loaded successfully', data);
+                        const model = isGLTF ? data.scene : data;
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+                        scene.remove(this.mesh);
+                        this.mesh = model;
+                        this.mesh.position.copy(this.position);
+                        this.mesh.rotation.y = this.rotation;
+                        scene.add(this.mesh);
+                        console.log('Vehicle model added to scene');
+                    },
+                    (progress) => {
+                        console.log(`Loading progress: ${Math.round((progress.loaded / progress.total) * 100)}%`);
+                    },
+                    (error) => {
+                        console.error('Model loading error:', error);
+                        alert(`Failed to load model: ${error.message}\n\nCheck console for details.`);
+                    }
+                );
             }
         }
 
@@ -561,22 +592,28 @@
             document.getElementById('loading').innerHTML = `
                 <h2>LOADING ${modelFile.split('_').slice(0, 3).join(' ').toUpperCase()}</h2>
                 <div class="spinner"></div>
+                <p style="color: #a0aeff; margin-top: 20px; font-size: 12px;" id="loading-status">Fetching model...</p>
             `;
 
             // GitHub raw content URL
             const modelUrl = `https://raw.githubusercontent.com/suprosmith-coder/nix-drift/main/models/${modelFile}`;
+            
+            console.log('Loading model from:', modelUrl);
+            document.getElementById('loading-status').textContent = `Loading: ${modelUrl}`;
             
             vehicle.loadModel(modelUrl, true); // true = isGLTF
 
             setTimeout(() => {
                 document.getElementById('loading').style.display = 'none';
                 animate();
-            }, 1500);
+            }, 2500);
         }
 
         // Show selector on load
-        document.getElementById('loading').style.display = 'none';
-        createModelSelector();
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            createModelSelector();
+        }, 100);
 
         // ============================================
         // WINDOW RESIZE
