@@ -284,11 +284,11 @@
 
     /* Gear indicator */
     #gearIndicator{
-      position:fixed;right:14px;bottom:140px;
+      position:fixed;right:14px;bottom:148px;
       font-family:'Orbitron',monospace;font-size:13px;
       color:rgba(0,255,136,.5);letter-spacing:1px;text-align:center;
     }
-    @media(max-width:768px){#gearIndicator{bottom:168px;}}
+    @media(max-width:768px){#gearIndicator{bottom:178px;}}
 
     /* Drift text */
     #driftToast{
@@ -397,6 +397,19 @@
       <div id="speedUnit">KM/H</div>
     </div>
     <div id="gearIndicator">N</div>
+    <!-- Nitro bar -->
+    <div id="nitroWrap" style="
+      position:fixed;right:14px;bottom:116px;
+      width:80px;
+      background:rgba(0,0,0,.5);border:1px solid rgba(0,200,255,.25);
+      border-radius:8px;padding:4px 6px;text-align:center;
+      backdrop-filter:blur(6px);
+    ">
+      <div style="font-size:8px;letter-spacing:2px;color:rgba(0,200,255,.7);margin-bottom:3px;font-family:'Orbitron',monospace;">NOS</div>
+      <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+        <div id="nitroBar" style="height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,#00c8ff,#00ff88);"></div>
+      </div>
+    </div>
     <div id="timeOfDay">🌙 NIGHT</div>
     <div id="pauseHint">ESC · PAUSE</div>
     <div id="driftToast">DRIFT!</div>
@@ -404,7 +417,7 @@
     <div id="controlsHint">
       <b>W/↑</b> Accelerate &nbsp; <b>S/↓</b> Brake<br>
       <b>A/←</b> Left &nbsp; <b>D/→</b> Right<br>
-      <b>Space</b> Handbrake / Drift<br>
+      <b>Space</b> Handbrake / Drift &nbsp; <b>Shift</b> Nitro<br>
       <b>Drag</b> Rotate camera &nbsp; <b>ESC</b> Pause
     </div>
     <!-- Minimap -->
@@ -558,18 +571,35 @@
   let gameTime = 0;
 
   const car = {
+    // Speed / velocity
     speed:0, maxSpeed:0.62, accel:0.032, friction:0.934,
     turnSpeed:0.066,
+    // World position & heading
     posX:0, posY:0, posZ:0, rotY:0,
-    // Suspension
+    // Vertical physics
+    velY:0,           // vertical velocity (gravity / bounce)
+    onGround:false,   // whether car is on the ground
+    airTime:0,        // seconds in the air
+    // Suspension spring
     suspBob:0, suspVel:0,
-    // Drift
-    driftAngle:0, driftScore:0, isDrifting:false,
-    driftCombo:0
+    suspCompression:0,
+    // Lateral grip / drift
+    lateralVel:0,
+    driftAngle:0, driftScore:0, isDrifting:false, driftCombo:0,
+    // Weight transfer (visual pitch & roll)
+    pitchAngle:0,
+    rollAngle:0,
+    // Nitro
+    nitro:100,
+    nitroActive:false,
+    // Tire spin
+    wheelSpin:0,
+    // Odometer
+    totalDist:0,
   };
 
   // Unified input
-  const input = { fwd:false, back:false, left:false, right:false, brake:false };
+  const input = { fwd:false, back:false, left:false, right:false, brake:false, nitro:false };
   let driftToastTimeout = null;
 
   /* ============================================================
@@ -581,6 +611,7 @@
     if(e.code==='KeyA'||e.key==='ArrowLeft')  input.left  = true;
     if(e.code==='KeyD'||e.key==='ArrowRight') input.right = true;
     if(e.code==='Space') { input.brake = true; e.preventDefault(); }
+    if(e.code==='ShiftLeft'||e.code==='ShiftRight') { input.nitro = true; }
     if(e.code==='Escape') { if(gameRunning) { gamePaused ? resumeGame() : pauseGame(); } }
   });
   document.addEventListener('keyup', e => {
@@ -589,6 +620,7 @@
     if(e.code==='KeyA'||e.key==='ArrowLeft')  input.left  = false;
     if(e.code==='KeyD'||e.key==='ArrowRight') input.right = false;
     if(e.code==='Space') input.brake = false;
+    if(e.code==='ShiftLeft'||e.code==='ShiftRight') { input.nitro = false; }
   });
 
   /* ============================================================
@@ -633,7 +665,9 @@
     document.getElementById('overlay').style.display = 'flex';
     // Reset car
     car.speed=0; car.posX=0; car.posY=0; car.posZ=0; car.rotY=0;
+    car.velY=0; car.onGround=false; car.airTime=0;
     car.driftAngle=0; car.driftScore=0; car.isDrifting=false; car.suspBob=0;
+    car.lateralVel=0; car.pitchAngle=0; car.rollAngle=0; car.nitro=100; car.totalDist=0;
     if(engineOsc) engineGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.2);
     // Remove map and restore procedural world
     if(mapMesh){ scene.remove(mapMesh); mapMesh=null; }
@@ -1131,6 +1165,7 @@
 
       mapMesh = model;
       scene.add(mapMesh);
+      rebuildMapMeshList(); // build flat mesh list for per-frame raycasting
 
       // ── Find a spawn point: raycast down from several candidate XZ positions ──
       const raycaster = new THREE.Raycaster();
@@ -1195,8 +1230,9 @@
     car.accel = stats.accel;
     car.friction = stats.friction;
     car.turnSpeed = stats.turnSpeed;
-    car.speed=0; car.rotY=0;
+    car.speed=0; car.rotY=0; car.velY=0; car.onGround=false; car.airTime=0;
     car.driftAngle=0; car.driftScore=0; car.isDrifting=false; car.suspBob=0;
+    car.lateralVel=0; car.pitchAngle=0; car.rollAngle=0; car.nitro=100; car.totalDist=0;
 
     document.getElementById('startBtn').disabled = true;
     initAudio();
@@ -1242,57 +1278,208 @@
   }
 
   /* ============================================================
-     PHYSICS & DRIFT
+     TERRAIN RAYCASTER — finds ground Y under car each frame
   ============================================================ */
-  function updateVehicle(dt){
-    const stats = CAR_STATS[selectedCar]||CAR_STATS.camaro;
-    const spd = Math.abs(car.speed);
+  const _groundRay = new THREE.Raycaster();
+  const _downDir   = new THREE.Vector3(0, -1, 0);
+  let   _mapMeshList = []; // flat list of map meshes, rebuilt when map loads
 
-    if(input.fwd)   car.speed = Math.min(car.speed + car.accel, car.maxSpeed);
-    if(input.back)  car.speed = Math.max(car.speed - car.accel*1.2, -car.maxSpeed*0.45);
-    if(input.brake) car.speed *= 0.82;
-    car.speed *= car.friction;
-
-    // Drift mechanic
-    const isTurning = input.left || input.right;
-    if(input.brake && isTurning && spd > 0.18){
-      car.isDrifting = true;
-      car.driftAngle += (input.left ? 0.04 : -0.04) * spd * 8;
-      car.driftAngle *= 0.88;
-      car.driftScore += spd * 60 * dt;
-    } else {
-      if(car.isDrifting && car.driftScore > 80){
-        showDriftScore(car.driftScore);
-      }
-      car.isDrifting = false;
-      car.driftAngle *= 0.85;
-      if(Math.abs(car.driftAngle)<0.001) car.driftAngle=0;
-      car.driftScore=0;
-    }
-
-    if(Math.abs(car.speed)>0.015){
-      const turnMult = car.isDrifting ? 1.4 : 1.0;
-      if(input.left)  car.rotY += car.turnSpeed * Math.sign(car.speed) * turnMult;
-      if(input.right) car.rotY -= car.turnSpeed * Math.sign(car.speed) * turnMult;
-    }
-
-    car.posX += Math.sin(car.rotY + car.driftAngle*0.5) * car.speed;
-    car.posZ += Math.cos(car.rotY + car.driftAngle*0.5) * car.speed;
-
-    // Suspension bob
-    const targetSusp = input.fwd ? Math.sin(Date.now()*0.008)*0.04*spd*5 : 0;
-    car.suspBob += (targetSusp - car.suspBob) * 0.15;
-
-    if(vehicleMesh){
-      vehicleMesh.position.set(car.posX, car.posY + car.suspBob, car.posZ);
-      vehicleMesh.rotation.y = car.rotY + car.driftAngle;
-      // Lean into turns
-      const targetRollZ = (input.left ? 0.04 : input.right ? -0.04 : 0)*spd*4;
-      vehicleMesh.rotation.z += (targetRollZ - vehicleMesh.rotation.z)*0.1;
-    }
+  function rebuildMapMeshList(){
+    _mapMeshList = [];
+    if(mapMesh) mapMesh.traverse(o => { if(o.isMesh) _mapMeshList.push(o); });
   }
 
-  function showDriftScore(score){
+  // Returns the world-Y of the ground directly below (carX, carZ),
+  // searching from startY downward. Returns null if nothing found.
+  function getGroundY(x, z, startY){
+    _groundRay.set(new THREE.Vector3(x, startY, z), _downDir);
+    _groundRay.far = startY + 60;
+    let hits;
+    if(usingMapMode && _mapMeshList.length){
+      hits = _groundRay.intersectObjects(_mapMeshList, false);
+    } else {
+      // Procedural flat road at Y=0
+      return 0;
+    }
+    if(hits.length === 0) return null;
+    // Pick highest hit (top surface, not underside)
+    let best = -Infinity;
+    for(const h of hits) if(h.point.y > best) best = h.point.y;
+    return best;
+  }
+
+  /* ============================================================
+     PHYSICS & DRIFT  (Asphalt 8-style)
+  ============================================================ */
+  // Tuning constants — feel inspired by Asphalt 8
+  const GRAVITY        = 28.0;   // world units/s²
+  const GROUND_OFFSET  = 1.2;    // car origin sits this far above ground surface
+  const BOUNCE_DAMP    = 0.35;   // energy kept on ground impact
+  const GRIP_LATERAL   = 0.72;   // lateral grip factor (1=perfect grip, 0=ice)
+  const DRIFT_GRIP     = 0.22;   // grip while handbrake drifting
+  const NITRO_MULT     = 1.55;   // speed multiplier during nitro
+  const NITRO_DRAIN    = 18;     // nitro units per second
+  const NITRO_REGEN    = 4;      // nitro units per second (passive regen)
+  const WEIGHT_PITCH   = 0.045;  // nose-dive / squat intensity
+  const WEIGHT_ROLL    = 0.055;  // body roll intensity
+  const SUSP_FREQ      = 14;     // suspension spring frequency
+  const SUSP_DAMP      = 5.0;    // suspension damping
+
+  function updateVehicle(dt){
+    const stats = CAR_STATS[selectedCar]||CAR_STATS.camaro;
+    const spd   = Math.abs(car.speed);
+
+    /* ── NITRO ── */
+    car.nitroActive = input.nitro && car.nitro > 0 && car.onGround;
+    if(car.nitroActive){
+      car.nitro = Math.max(0, car.nitro - NITRO_DRAIN * dt);
+    } else {
+      car.nitro = Math.min(100, car.nitro + NITRO_REGEN * dt);
+    }
+    const nitroBoost = car.nitroActive ? NITRO_MULT : 1.0;
+    const effectiveMax = stats.maxSpeed * nitroBoost;
+
+    /* ── THROTTLE / BRAKE ── */
+    const canDrive = car.onGround || car.airTime < 0.3; // brief air control
+    if(canDrive){
+      if(input.fwd)   car.speed = Math.min(car.speed + stats.accel * nitroBoost, effectiveMax);
+      if(input.back)  car.speed = Math.max(car.speed - stats.accel * 1.3, -effectiveMax * 0.42);
+      if(input.brake) car.speed *= 0.80;
+    }
+    // Rolling resistance
+    car.speed *= stats.friction;
+    // Wheel spin (visual) — high accel from low speed
+    car.wheelSpin += (input.fwd && spd < 0.15 ? (0.9 - car.wheelSpin)*8*dt : -car.wheelSpin*6*dt);
+    car.wheelSpin = Math.max(0, Math.min(1, car.wheelSpin));
+
+    /* ── LATERAL GRIP / DRIFT (Asphalt 8 style) ──
+       Car has a lateral velocity component. On normal grip it snaps to zero quickly.
+       On handbrake drift it persists, creating the sideways slide. */
+    const isTurning = input.left || input.right;
+    const driftTrigger = input.brake && isTurning && spd > 0.15;
+
+    // Lateral velocity from turning (centripetal force)
+    const turnRate = car.turnSpeed * Math.sign(car.speed);
+    let steerDelta = 0;
+    if(Math.abs(car.speed) > 0.01 && car.onGround){
+      if(input.left)  steerDelta =  turnRate;
+      if(input.right) steerDelta = -turnRate;
+    }
+    // Asphalt 8: while drifting, oversteer is exaggerated
+    if(driftTrigger){
+      steerDelta *= 1.55;
+      car.isDrifting = true;
+      car.driftScore += spd * 70 * dt;
+    } else {
+      if(car.isDrifting && car.driftScore > 80) showDriftScore(car.driftScore);
+      car.isDrifting = false;
+      car.driftScore = 0;
+    }
+    car.rotY += steerDelta;
+
+    // Lateral grip: slip angle
+    const lateralGrip = driftTrigger ? DRIFT_GRIP : GRIP_LATERAL;
+    // Inertia pushes car sideways during turns
+    car.lateralVel += steerDelta * spd * 0.6;
+    car.lateralVel *= (1 - lateralGrip * (car.onGround ? 1 : 0.3));
+
+    // Drift angle (visual yaw offset of mesh, like Asphalt 8)
+    const targetDrift = driftTrigger ? car.lateralVel * 2.2 : 0;
+    car.driftAngle += (targetDrift - car.driftAngle) * (driftTrigger ? 0.12 : 0.18);
+
+    /* ── MOVE FORWARD ── */
+    const fwdDir = car.rotY + car.driftAngle * 0.35;
+    const prevX = car.posX, prevZ = car.posZ;
+    car.posX += (Math.sin(fwdDir) * car.speed + Math.cos(fwdDir) * car.lateralVel * 0.18);
+    car.posZ += (Math.cos(fwdDir) * car.speed - Math.sin(fwdDir) * car.lateralVel * 0.18);
+    car.totalDist += Math.sqrt((car.posX-prevX)**2+(car.posZ-prevZ)**2);
+
+    /* ── VERTICAL / TERRAIN COLLISION ──
+       Raycast from well above car down to map surface each frame. */
+    const rayStartY = car.posY + 12; // cast from above
+    const groundY   = getGroundY(car.posX, car.posZ, rayStartY);
+
+    if(groundY !== null){
+      const targetY = groundY + GROUND_OFFSET;
+      if(car.posY > targetY + 0.05){
+        // In the air — apply gravity
+        car.velY -= GRAVITY * dt;
+        car.posY += car.velY * dt;
+        car.onGround = false;
+        car.airTime += dt;
+        // Don't fall below found ground
+        if(car.posY < targetY){
+          // Land
+          const impactVel = Math.abs(car.velY);
+          car.velY = impactVel > 2 ? impactVel * BOUNCE_DAMP : 0;
+          car.posY = targetY;
+          car.onGround = true;
+          car.airTime  = 0;
+          // Landing scrubs speed slightly
+          if(impactVel > 5) car.speed *= 0.85;
+        }
+      } else {
+        // On ground — follow surface smoothly
+        car.posY += (targetY - car.posY) * Math.min(1, 22 * dt);
+        car.velY  = 0;
+        car.onGround = true;
+        car.airTime  = 0;
+      }
+    } else {
+      // No ground found — apply gravity (over void / edge)
+      car.velY -= GRAVITY * dt;
+      car.posY += car.velY * dt;
+      car.onGround = false;
+      car.airTime += dt;
+      // Safety net: if fallen very far, reset to spawn
+      if(car.posY < mapSpawnPos.y - 60){
+        car.posX = mapSpawnPos.x; car.posY = mapSpawnPos.y; car.posZ = mapSpawnPos.z;
+        car.speed = 0; car.velY = 0; car.onGround = true; car.airTime = 0;
+      }
+    }
+
+    /* ── SUSPENSION SPRING (visual) ── */
+    const suspTarget = car.onGround ? -car.suspCompression * 0.18 : 0;
+    car.suspCompression = Math.max(0, Math.min(1,
+      car.suspCompression + (Math.abs(car.speed)*3 - car.suspCompression) * 6 * dt
+    ));
+    car.suspVel  += (-SUSP_FREQ * SUSP_FREQ * (car.suspBob - suspTarget) - SUSP_DAMP * car.suspVel) * dt;
+    car.suspBob  += car.suspVel * dt;
+
+    /* ── WEIGHT TRANSFER (Asphalt 8 body rock) ── */
+    // Pitch: nose dips under braking, squats under acceleration
+    const targetPitch = input.fwd ? -WEIGHT_PITCH * spd * 5
+                      : (input.brake||input.back) ?  WEIGHT_PITCH * spd * 4 : 0;
+    car.pitchAngle += (targetPitch - car.pitchAngle) * 6 * dt;
+    // Roll: lean into corners
+    const targetRoll = (input.left ? WEIGHT_ROLL : input.right ? -WEIGHT_ROLL : 0) * spd * 5;
+    car.rollAngle += (targetRoll - car.rollAngle) * 7 * dt;
+
+    /* ── UPDATE MESH ── */
+    if(vehicleMesh){
+      vehicleMesh.position.set(car.posX, car.posY + car.suspBob, car.posZ);
+      vehicleMesh.rotation.order = 'YXZ';
+      vehicleMesh.rotation.y = car.rotY + car.driftAngle;
+      vehicleMesh.rotation.x = car.pitchAngle;
+      vehicleMesh.rotation.z = car.rollAngle;
+    }
+
+    /* ── NITRO HUD flash ── */
+    updateNitroHUD();
+  }
+
+  function updateNitroHUD(){
+    const el = document.getElementById('nitroBar');
+    if(!el) return;
+    el.style.width = car.nitro + '%';
+    el.style.background = car.nitroActive
+      ? 'linear-gradient(90deg,#ff6a00,#ffcc00)'
+      : 'linear-gradient(90deg,#00c8ff,#00ff88)';
+    const wrap = document.getElementById('nitroWrap');
+    if(wrap) wrap.style.opacity = car.nitroActive ? '1' : '0.7';
+  }
+
+
     const el = document.getElementById('driftToast');
     const sc = document.getElementById('driftScore');
     const pts = Math.floor(score);
