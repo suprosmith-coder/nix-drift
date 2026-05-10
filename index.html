@@ -632,11 +632,16 @@
     document.getElementById('hud').style.display = 'none';
     document.getElementById('overlay').style.display = 'flex';
     // Reset car
-    car.speed=0; car.posX=0; car.posY=0; car.posZ=0; car.rotY=0;
+    // Spawn position depends on whether map loaded
+    const spawnPos = usingMapMode ? mapSpawnPos : {x:0, y:0, z:0};
+    car.speed=0; car.posX=spawnPos.x; car.posY=spawnPos.y; car.posZ=spawnPos.z; car.rotY=0;
     car.driftAngle=0; car.driftScore=0; car.isDrifting=false;
     if(engineOsc) engineGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.2);
-    // Remove map so it reloads fresh next time
+    // Remove map and restore procedural world
     if(mapMesh){ scene.remove(mapMesh); mapMesh=null; }
+    usingMapMode = false;
+    proceduralObjects.forEach(o => { o.visible = true; });
+    roadCurve.chunks.forEach(c => { c.group.visible = true; });
     rebuildWorld();
   }
 
@@ -923,6 +928,7 @@
   let currentChunkIdx = 0;
 
   function updateRoad(){
+    if(usingMapMode) return; // London map — no procedural road management
     // Check if we need to recycle the oldest chunk
     // The car's world pos: compare to chunk positions
     const carPos = new THREE.Vector3(car.posX, 0, car.posZ);
@@ -994,7 +1000,7 @@
     const terrain = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x1a3322,roughness:0.95}));
     terrain.rotation.x = -Math.PI/2;
     terrain.position.y = -0.05;
-    scene.add(terrain);
+    proceduralObjects.push(terrain); scene.add(terrain);
   }
 
   function buildMountains(){
@@ -1007,7 +1013,7 @@
       const mat = new THREE.MeshStandardMaterial({color:0x0d1a2a,roughness:1});
       const m = new THREE.Mesh(geo, mat);
       m.position.set(Math.cos(angle)*dist, h/2, Math.sin(angle)*dist);
-      scene.add(m);
+      proceduralObjects.push(m); scene.add(m);
     }
   }
 
@@ -1018,7 +1024,7 @@
       arr.push((Math.random()-0.5)*900, 60+Math.random()*200, (Math.random()-0.5)*900);
     }
     geo.setAttribute('position', new THREE.Float32BufferAttribute(arr,3));
-    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({color:0xffffff,size:0.7,sizeAttenuation:true})));
+    const stars = new THREE.Points(geo, new THREE.PointsMaterial({color:0xffffff,size:0.7,sizeAttenuation:true})); proceduralObjects.push(stars); scene.add(stars);
   }
 
   /* ============================================================
@@ -1095,6 +1101,10 @@
      MAP LOADING (NFS Shift PSP - London Short)
   ============================================================ */
   let mapMesh = null;
+  let usingMapMode = false; // true when London map loaded OK
+  let proceduralObjects = []; // terrain, mountains, stars — hidden in map mode
+
+  let mapSpawnPos = {x:0, y:2, z:0}; // where to place car on the map
 
   function loadMapModel(onDone, onError){
     const loader = new THREE.GLTFLoader();
@@ -1102,25 +1112,71 @@
     document.getElementById('loadingMsg').innerHTML = '<span class="spinner"></span>Loading London track...';
     loader.load(url, gltf=>{
       const model = gltf.scene;
-      // Auto-scale map to a reasonable world size
+
+      // ── Scale: fit map into ~800 world units on the longest axis ──
       const box = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const targetSize = 600; // world units
+      const targetSize = 800;
       const scale = targetSize / maxDim;
       model.scale.setScalar(scale);
-      // Center on XZ, sit on Y=0
-      const center = box.getCenter(new THREE.Vector3());
-      model.position.set(-center.x*scale, -box.min.y*scale, -center.z*scale);
+
+      // ── Recompute box after scale, sit flat on Y=0 ──
+      model.updateMatrixWorld(true);
+      const box2 = new THREE.Box3().setFromObject(model);
+      model.position.set(
+        -(box2.min.x + box2.max.x) * 0.5,  // center X
+        -box2.min.y,                          // floor to Y=0
+        -(box2.min.z + box2.max.z) * 0.5   // center Z
+      );
+      model.updateMatrixWorld(true);
+
       mapMesh = model;
       scene.add(mapMesh);
+
+      // ── Find a spawn point: raycast down from several candidate XZ positions ──
+      const raycaster = new THREE.Raycaster();
+      const mapObjects = [];
+      model.traverse(o => { if(o.isMesh) mapObjects.push(o); });
+
+      const candidates = [
+        {x:0,z:0}, {x:10,z:0}, {x:-10,z:0}, {x:0,z:10}, {x:0,z:-10},
+        {x:20,z:20}, {x:-20,z:20}, {x:20,z:-20}, {x:-20,z:-20},
+        {x:40,z:0}, {x:-40,z:0}, {x:0,z:40}, {x:0,z:-40},
+        {x:60,z:60}, {x:-60,z:60}, {x:60,z:-60}
+      ];
+
+      let found = false;
+      for(const c of candidates){
+        raycaster.set(new THREE.Vector3(c.x, 200, c.z), new THREE.Vector3(0,-1,0));
+        const hits = raycaster.intersectObjects(mapObjects, false);
+        if(hits.length > 0){
+          mapSpawnPos = { x: hits[0].point.x, y: hits[0].point.y + 1.0, z: hits[0].point.z };
+          found = true;
+          console.log('Map spawn found at', mapSpawnPos);
+          break;
+        }
+      }
+      if(!found){
+        // Fallback: sit on top of the map bounding box center
+        const b = new THREE.Box3().setFromObject(model);
+        mapSpawnPos = { x:0, y: b.max.y + 1.0, z:0 };
+        console.log('Map spawn fallback at', mapSpawnPos);
+      }
+
+      // ── Hide procedural world (terrain, mountains, stars, road chunks) ──
+      usingMapMode = true;
+      proceduralObjects.forEach(o => { o.visible = false; });
+      roadCurve.chunks.forEach(c => { c.group.visible = false; });
+
       if(onDone) onDone();
     }, xhr=>{
       if(xhr.total) document.getElementById('loadingMsg').innerHTML =
         '<span class="spinner"></span>Loading map... ' + Math.round(xhr.loaded/xhr.total*100) + '%';
     }, err=>{
       console.warn('Map load failed, using procedural world:', err);
-      if(onDone) onDone(); // graceful fallback — still show procedural world
+      usingMapMode = false;
+      if(onDone) onDone(); // graceful fallback
     });
   }
 
