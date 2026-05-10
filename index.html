@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Drift - Slow Roads Inspired</title>
+    <title>Neon Drift</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'IBM Plex Mono', monospace;
             background: #0a0e27;
             color: #e0e6ff;
             overflow: hidden;
@@ -26,133 +26,87 @@
             height: 100%;
         }
 
-        /* HUD Container */
+        /* HUD */
         #hud {
             position: absolute;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            font-family: 'IBM Plex Mono', monospace;
         }
 
-        /* Speed Indicator - Bottom Left */
-        #speed-display {
+        .hud-panel {
             position: absolute;
-            bottom: 40px;
-            left: 40px;
-            background: rgba(10, 14, 39, 0.7);
+            background: rgba(10, 14, 39, 0.8);
             backdrop-filter: blur(8px);
-            padding: 20px 30px;
-            border: 1px solid rgba(224, 230, 255, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.3);
             border-radius: 8px;
-            font-size: 32px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            color: #00ff88;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-            min-width: 200px;
-        }
-
-        #speed-unit {
+            padding: 16px 24px;
             font-size: 14px;
-            color: #a0aeff;
-            margin-top: 4px;
+            color: #00ff88;
             letter-spacing: 1px;
         }
 
-        /* Time Display - Top Left */
+        #speed-display {
+            bottom: 40px;
+            left: 40px;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
         #time-display {
-            position: absolute;
             top: 40px;
             left: 40px;
-            background: rgba(10, 14, 39, 0.7);
-            backdrop-filter: blur(8px);
-            padding: 16px 24px;
-            border: 1px solid rgba(224, 230, 255, 0.2);
-            border-radius: 8px;
-            font-size: 18px;
-            color: #a0aeff;
-            letter-spacing: 1px;
         }
 
-        /* Vibe Meter - Top Right */
-        #vibe-meter {
-            position: absolute;
-            top: 40px;
-            right: 40px;
-            background: rgba(10, 14, 39, 0.7);
-            backdrop-filter: blur(8px);
-            padding: 16px 24px;
-            border: 1px solid rgba(224, 230, 255, 0.2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .vibe-bar {
-            width: 120px;
-            height: 8px;
-            background: rgba(224, 230, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .vibe-fill {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #00ff88, #00ccff);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
-            border-radius: 4px;
-        }
-
-        /* Controls Info - Bottom Right */
-        #controls-info {
-            position: absolute;
+        #controls-display {
             bottom: 40px;
             right: 40px;
-            background: rgba(10, 14, 39, 0.7);
-            backdrop-filter: blur(8px);
-            padding: 20px 24px;
-            border: 1px solid rgba(224, 230, 255, 0.2);
-            border-radius: 8px;
             font-size: 12px;
-            color: #7080c0;
-            line-height: 1.6;
-            font-family: 'IBM Plex Mono', monospace;
             text-align: right;
+            color: #7080c0;
         }
 
-        .control-item {
-            margin: 4px 0;
-        }
-
-        .control-key {
-            color: #00ff88;
-            font-weight: 600;
-            margin-right: 8px;
-        }
-
-        /* Loading Indicator */
-        #loading {
+        /* Modal */
+        #modal {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(10, 14, 39, 0.95);
-            backdrop-filter: blur(8px);
-            padding: 40px 60px;
-            border: 1px solid rgba(224, 230, 255, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.3);
             border-radius: 12px;
+            padding: 40px;
             text-align: center;
-            z-index: 100;
+            z-index: 1000;
+            min-width: 300px;
         }
 
-        #loading h2 {
+        #modal h2 {
             color: #00ff88;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
             font-size: 20px;
+            letter-spacing: 2px;
+        }
+
+        #modal button {
+            display: block;
+            width: 100%;
+            padding: 12px 24px;
+            margin: 10px 0;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            color: #00ff88;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
             letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        #modal button:hover {
+            background: rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
         }
 
         .spinner {
@@ -169,52 +123,8 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Fade in animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hud-element {
-            animation: fadeIn 0.6s ease-out forwards;
-        }
-
-        #speed-display {
-            animation-delay: 0.1s;
-        }
-
-        #time-display {
-            animation-delay: 0.2s;
-        }
-
-        #vibe-meter {
-            animation-delay: 0.3s;
-        }
-
-        #controls-info {
-            animation-delay: 0.4s;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            #speed-display, #time-display, #vibe-meter, #controls-info {
-                font-size: 12px;
-                padding: 12px 16px;
-                bottom: 20px;
-                right: 20px;
-                top: 20px;
-                left: 20px;
-            }
-
-            #controls-info {
-                display: none;
-            }
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -222,416 +132,219 @@
     <canvas id="canvas"></canvas>
     
     <div id="hud">
-        <div id="time-display" class="hud-element">
+        <div class="hud-panel" id="time-display">
             <span id="time-value">00:00</span>
         </div>
 
-        <div id="vibe-meter" class="hud-element">
-            <span>VIBE</span>
-            <div class="vibe-bar">
-                <div class="vibe-fill" id="vibe-fill"></div>
-            </div>
-        </div>
-
-        <div id="speed-display" class="hud-element">
+        <div class="hud-panel" id="speed-display">
             <div id="speed-value">0</div>
-            <div id="speed-unit">KM/H</div>
+            <div style="font-size: 12px; color: #a0aeff;">KM/H</div>
         </div>
 
-        <div id="controls-info" class="hud-element">
-            <div class="control-item"><span class="control-key">W/↑</span> Accelerate</div>
-            <div class="control-item"><span class="control-key">A/←</span> Turn Left</div>
-            <div class="control-item"><span class="control-key">S/↓</span> Brake</div>
-            <div class="control-item"><span class="control-key">D/→</span> Turn Right</div>
-            <div class="control-item"><span class="control-key">SPACE</span> Handbrake</div>
+        <div class="hud-panel" id="controls-display">
+            <div>W/↑ Accelerate</div>
+            <div>A/← Turn Left</div>
+            <div>S/↓ Brake</div>
+            <div>D/→ Turn Right</div>
         </div>
     </div>
 
-    <div id="loading">
-        <h2>INITIALIZING</h2>
-        <div class="spinner"></div>
+    <div id="modal">
+        <h2>NEON DRIFT</h2>
+        <p style="color: #a0aeff; margin-bottom: 24px; font-size: 12px;">Select Your Ride</p>
+        <button onclick="selectCar('camaro')">2019 Camaro ZL1</button>
+        <button onclick="selectCar('hellcat')">2020 Dodge Hellcat</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script type="module">
-        import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/loaders/FBXLoader.js';
-        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/loaders/GLTFLoader.js';
+    <script src="https://cdn.jsdelivr.net/npm/three@r128/examples/js/loaders/GLTFLoader.js"></script>
 
-        // Wait for THREE to be available
-        function waitForTHREE() {
-            return new Promise((resolve) => {
-                if (window.THREE) {
-                    resolve();
-                } else {
-                    const checkInterval = setInterval(() => {
-                        if (window.THREE) {
-                            clearInterval(checkInterval);
-                            resolve();
-                        }
-                    }, 50);
-                }
+    <script>
+        // Game variables
+        let scene, camera, renderer;
+        let vehicle;
+        let gameTime = 0;
+        let keys = {};
+
+        const carModels = {
+            camaro: '2019_chevrolet_camaro_zl1.glb',
+            hellcat: '2020_dodge_charger_srt_hellcat_daytona_50th.glb'
+        };
+
+        function initScene() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a2847);
+            scene.fog = new THREE.Fog(0x1a2847, 200, 500);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 8, -15);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('canvas'),
+                antialias: true
             });
-        }
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
 
-        await waitForTHREE();
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
 
-        // ============================================
-        // SCENE SETUP
-        // ============================================
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a2847);
-        scene.fog = new THREE.Fog(0x1a2847, 200, 500);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(100, 100, 50);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFShadowShadowMap;
-
-        // ============================================
-        // LIGHTING
-        // ============================================
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(100, 100, 50);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        directionalLight.shadow.camera.far = 500;
-        directionalLight.shadow.camera.left = -150;
-        directionalLight.shadow.camera.right = 150;
-        directionalLight.shadow.camera.top = 150;
-        directionalLight.shadow.camera.bottom = -150;
-        scene.add(directionalLight);
-
-        // ============================================
-        // VEHICLE PHYSICS (Arcade-style)
-        // ============================================
-        class Vehicle {
-            constructor() {
-                this.position = new THREE.Vector3(0, 2, 0);
-                this.velocity = new THREE.Vector3(0, 0, 0);
-                this.rotation = 0; // Yaw in radians
-                this.speed = 0;
-                this.maxSpeed = 0.5;
-                this.acceleration = 0.02;
-                this.friction = 0.92;
-                this.turnSpeed = 0.08;
-
-                // Input state
-                this.keys = {
-                    w: false, a: false, s: false, d: false, space: false
-                };
-
-                // Visual mesh (placeholder cube until model loads)
-                this.mesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.5, 1, 2.5),
-                    new THREE.MeshStandardMaterial({ color: 0xff0080, metalness: 0.4 })
-                );
-                this.mesh.castShadow = true;
-                this.mesh.receiveShadow = true;
-                this.mesh.position.copy(this.position);
-                scene.add(this.mesh);
-            }
-
-            update() {
-                // Acceleration
-                if (this.keys.w) this.speed = Math.min(this.speed + this.acceleration, this.maxSpeed);
-                if (this.keys.s) this.speed = Math.max(this.speed - this.acceleration, -this.maxSpeed * 0.5);
-                
-                // Friction
-                this.speed *= this.friction;
-
-                // Turning (only when moving)
-                if (Math.abs(this.speed) > 0.05) {
-                    if (this.keys.a) this.rotation += this.turnSpeed;
-                    if (this.keys.d) this.rotation -= this.turnSpeed;
-                }
-
-                // Handbrake (sharp friction)
-                if (this.keys.space) this.speed *= 0.85;
-
-                // Update position
-                this.position.x += Math.sin(this.rotation) * this.speed;
-                this.position.z += Math.cos(this.rotation) * this.speed;
-
-                // Gravity
-                this.position.y -= 0.01;
-                if (this.position.y < 0.5) this.position.y = 0.5;
-
-                // Update mesh
-                this.mesh.position.copy(this.position);
-                this.mesh.rotation.y = this.rotation;
-            }
-
-            loadModel(url, isGLTF = false) {
-                const loader = isGLTF ? new GLTFLoader() : new FBXLoader();
-                console.log(`Loading model: ${url} (${isGLTF ? 'GLTF' : 'FBX'})`);
-                
-                loader.load(
-                    url,
-                    (data) => {
-                        console.log('Model loaded successfully', data);
-                        const model = isGLTF ? data.scene : data;
-                        model.traverse((child) => {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                            }
-                        });
-                        scene.remove(this.mesh);
-                        this.mesh = model;
-                        this.mesh.position.copy(this.position);
-                        this.mesh.rotation.y = this.rotation;
-                        scene.add(this.mesh);
-                        console.log('Vehicle model added to scene');
-                    },
-                    (progress) => {
-                        console.log(`Loading progress: ${Math.round((progress.loaded / progress.total) * 100)}%`);
-                    },
-                    (error) => {
-                        console.error('Model loading error:', error);
-                        alert(`Failed to load model: ${error.message}\n\nCheck console for details.`);
-                    }
-                );
-            }
-        }
-
-        const vehicle = new Vehicle();
-
-        // ============================================
-        // TERRAIN
-        // ============================================
-        function createTerrain() {
+            // Terrain
             const terrainGeometry = new THREE.PlaneGeometry(300, 300, 50, 50);
             const terrainMaterial = new THREE.MeshStandardMaterial({
                 color: 0x2d5a3d,
-                roughness: 0.8,
-                metalness: 0.1
+                roughness: 0.8
             });
-
-            terrainGeometry.vertices.forEach((v, i) => {
-                v.z = Math.sin(v.x * 0.05) * 2 + Math.cos(v.y * 0.05) * 2;
-            });
-            terrainGeometry.computeVertexNormals();
-
             const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
             terrain.rotation.x = -Math.PI / 2;
             terrain.receiveShadow = true;
             scene.add(terrain);
-        }
 
-        function createRoad() {
+            // Road
             const roadGeometry = new THREE.PlaneGeometry(15, 300);
             const roadMaterial = new THREE.MeshStandardMaterial({
                 color: 0x1a1a2e,
                 roughness: 0.6
             });
-
             const road = new THREE.Mesh(roadGeometry, roadMaterial);
             road.rotation.x = -Math.PI / 2;
             road.position.z = 100;
             road.receiveShadow = true;
             scene.add(road);
+
+            // Vehicle (placeholder)
+            const vehicleGeometry = new THREE.BoxGeometry(1.5, 1, 2.5);
+            const vehicleMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff0080,
+                metalness: 0.4
+            });
+            vehicle = new THREE.Mesh(vehicleGeometry, vehicleMaterial);
+            vehicle.castShadow = true;
+            vehicle.receiveShadow = true;
+            vehicle.position.y = 1;
+            scene.add(vehicle);
+
+            // Vehicle data
+            vehicle.velocity = new THREE.Vector3();
+            vehicle.speed = 0;
+            vehicle.rotation.order = 'YXZ';
+
+            // Input
+            document.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+                if (e.key === 'ArrowUp') keys['w'] = true;
+                if (e.key === 'ArrowLeft') keys['a'] = true;
+                if (e.key === 'ArrowDown') keys['s'] = true;
+                if (e.key === 'ArrowRight') keys['d'] = true;
+            });
+
+            document.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+                if (e.key === 'ArrowUp') keys['w'] = false;
+                if (e.key === 'ArrowLeft') keys['a'] = false;
+                if (e.key === 'ArrowDown') keys['s'] = false;
+                if (e.key === 'ArrowRight') keys['d'] = false;
+            });
+
+            // Resize handler
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
         }
 
-        createTerrain();
-        createRoad();
+        function loadModel(modelFile) {
+            const url = `https://raw.githubusercontent.com/suprosmith-coder/nix-drift/main/models/${modelFile}`;
+            const loader = new THREE.GLTFLoader();
 
-        // ============================================
-        // INPUT HANDLING
-        // ============================================
-        document.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            if (key === 'w') vehicle.keys.w = true;
-            if (key === 'a') vehicle.keys.a = true;
-            if (key === 's') vehicle.keys.s = true;
-            if (key === 'd') vehicle.keys.d = true;
-            if (e.code === 'Space') { vehicle.keys.space = true; e.preventDefault(); }
-            
-            // Arrow keys
-            if (e.key === 'ArrowUp') vehicle.keys.w = true;
-            if (e.key === 'ArrowLeft') vehicle.keys.a = true;
-            if (e.key === 'ArrowDown') vehicle.keys.s = true;
-            if (e.key === 'ArrowRight') vehicle.keys.d = true;
-        });
+            loader.load(
+                url,
+                (gltf) => {
+                    console.log('Model loaded:', modelFile);
+                    const model = gltf.scene;
+                    model.position.copy(vehicle.position);
+                    model.rotation.y = vehicle.rotation.y;
+                    scene.remove(vehicle);
+                    scene.add(model);
+                    vehicle = model;
+                    vehicle.position.y = 1;
+                    document.getElementById('modal').classList.add('hidden');
+                    animate();
+                },
+                (progress) => {
+                    console.log('Loading:', Math.round((progress.loaded / progress.total) * 100) + '%');
+                },
+                (error) => {
+                    console.error('Load error:', error);
+                    alert('Failed to load model. Check console.');
+                }
+            );
+        }
 
-        document.addEventListener('keyup', (e) => {
-            const key = e.key.toLowerCase();
-            if (key === 'w') vehicle.keys.w = false;
-            if (key === 'a') vehicle.keys.a = false;
-            if (key === 's') vehicle.keys.s = false;
-            if (key === 'd') vehicle.keys.d = false;
-            if (e.code === 'Space') vehicle.keys.space = false;
-            
-            if (e.key === 'ArrowUp') vehicle.keys.w = false;
-            if (e.key === 'ArrowLeft') vehicle.keys.a = false;
-            if (e.key === 'ArrowDown') vehicle.keys.s = false;
-            if (e.key === 'ArrowRight') vehicle.keys.d = false;
-        });
+        function selectCar(car) {
+            document.getElementById('modal').innerHTML = `
+                <h2>LOADING...</h2>
+                <div class="spinner"></div>
+            `;
+            loadModel(carModels[car]);
+        }
 
-        // ============================================
-        // GAME STATE
-        // ============================================
-        let gameTime = 0;
-        let vibeMeter = 100;
+        function animate() {
+            requestAnimationFrame(animate);
 
-        function updateHUD() {
+            // Controls
+            if (keys['w']) vehicle.speed = Math.min(vehicle.speed + 0.02, 0.5);
+            if (keys['s']) vehicle.speed = Math.max(vehicle.speed - 0.02, -0.25);
+            vehicle.speed *= 0.92;
+
+            if (Math.abs(vehicle.speed) > 0.05) {
+                if (keys['a']) vehicle.rotation.y += 0.08;
+                if (keys['d']) vehicle.rotation.y -= 0.08;
+            }
+
+            // Update position
+            vehicle.position.x += Math.sin(vehicle.rotation.y) * vehicle.speed;
+            vehicle.position.z += Math.cos(vehicle.rotation.y) * vehicle.speed;
+            vehicle.position.y = Math.max(1, vehicle.position.y - 0.01);
+
+            // Camera follow
+            const targetX = vehicle.position.x;
+            const targetY = vehicle.position.y + 8;
+            const targetZ = vehicle.position.z - 15;
+            camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.1);
+            camera.lookAt(vehicle.position.x, vehicle.position.y + 2, vehicle.position.z);
+
+            // Update HUD
+            gameTime += 1 / 60;
             const minutes = Math.floor(gameTime / 60);
             const seconds = Math.floor(gameTime % 60);
-            const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            document.getElementById('time-value').textContent = timeStr;
+            document.getElementById('time-value').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
             const speedKmh = Math.abs(vehicle.speed * 100);
             document.getElementById('speed-value').textContent = Math.round(speedKmh);
 
-            vibeMeter = Math.max(0, vibeMeter - 0.1);
-            if (Math.abs(vehicle.speed) > 0.1) vibeMeter = Math.min(100, vibeMeter + 0.2);
-            document.getElementById('vibe-fill').style.width = vibeMeter + '%';
-        }
-
-        // ============================================
-        // CAMERA FOLLOW
-        // ============================================
-        const cameraOffset = new THREE.Vector3(0, 8, -15);
-
-        function updateCamera() {
-            const targetX = vehicle.position.x + cameraOffset.x;
-            const targetY = vehicle.position.y + cameraOffset.y;
-            const targetZ = vehicle.position.z + cameraOffset.z;
-
-            camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.1);
-            camera.lookAt(vehicle.position.x, vehicle.position.y + 2, vehicle.position.z);
-        }
-
-        // ============================================
-        // ANIMATION LOOP
-        // ============================================
-        function animate() {
-            requestAnimationFrame(animate);
-
-            vehicle.update();
-            updateCamera();
-            updateHUD();
-            gameTime += 1 / 60;
-
+            // Render
             renderer.render(scene, camera);
         }
 
-        // ============================================
-        // MODEL LOADING
-        // ============================================
-        const availableModels = {
-            'Camaro ZL1': '2019_chevrolet_camaro_zl1.glb',
-            'Dodge Hellcat': '2020_dodge_charger_srt_hellcat_daytona_50th.glb'
-        };
-
-        function createModelSelector() {
-            const selector = document.createElement('div');
-            selector.id = 'model-selector';
-            selector.style.cssText = `
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(10, 14, 39, 0.95);
-                backdrop-filter: blur(8px);
-                padding: 40px 60px;
-                border: 1px solid rgba(224, 230, 255, 0.2);
-                border-radius: 12px;
-                text-align: center;
-                z-index: 100;
-                font-family: 'IBM Plex Mono', monospace;
-            `;
-            
-            const title = document.createElement('h2');
-            title.textContent = 'SELECT YOUR RIDE';
-            title.style.cssText = 'color: #00ff88; margin-bottom: 24px; font-size: 20px; letter-spacing: 1px;';
-            selector.appendChild(title);
-
-            Object.entries(availableModels).forEach(([name, file]) => {
-                const btn = document.createElement('button');
-                btn.textContent = name;
-                btn.style.cssText = `
-                    display: block;
-                    width: 100%;
-                    padding: 12px 24px;
-                    margin: 8px 0;
-                    background: rgba(0, 255, 136, 0.1);
-                    border: 1px solid rgba(0, 255, 136, 0.4);
-                    color: #00ff88;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-family: 'IBM Plex Mono', monospace;
-                    font-size: 14px;
-                    letter-spacing: 1px;
-                    transition: all 0.3s ease;
-                `;
-                btn.onmouseover = () => {
-                    btn.style.background = 'rgba(0, 255, 136, 0.2)';
-                    btn.style.boxShadow = '0 0 15px rgba(0, 255, 136, 0.3)';
-                };
-                btn.onmouseout = () => {
-                    btn.style.background = 'rgba(0, 255, 136, 0.1)';
-                    btn.style.boxShadow = 'none';
-                };
-                btn.onclick = () => {
-                    loadAndStartGame(file);
-                    selector.remove();
-                };
-                selector.appendChild(btn);
-            });
-
-            document.body.appendChild(selector);
-        }
-
-        function loadAndStartGame(modelFile) {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('loading').innerHTML = `
-                <h2>LOADING ${modelFile.split('_').slice(0, 3).join(' ').toUpperCase()}</h2>
-                <div class="spinner"></div>
-                <p style="color: #a0aeff; margin-top: 20px; font-size: 12px;" id="loading-status">Fetching model...</p>
-            `;
-
-            // GitHub raw content URL
-            const modelUrl = `https://raw.githubusercontent.com/suprosmith-coder/nix-drift/main/models/${modelFile}`;
-            
-            console.log('Loading model from:', modelUrl);
-            document.getElementById('loading-status').textContent = `Loading: ${modelUrl}`;
-            
-            vehicle.loadModel(modelUrl, true); // true = isGLTF
-
-            setTimeout(() => {
-                document.getElementById('loading').style.display = 'none';
-                animate();
-            }, 2500);
-        }
-
-        // Show selector on load
-        setTimeout(() => {
-            document.getElementById('loading').style.display = 'none';
-            createModelSelector();
-        }, 100);
-
-        // ============================================
-        // WINDOW RESIZE
-        // ============================================
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // ============================================
-        // EXPORT VEHICLE FOR MODEL LOADING
-        // ============================================
-        window.gameVehicle = vehicle;
-        window.gameScene = scene;
-        console.log('Game initialized. Load models with:');
-        console.log('gameVehicle.loadModel("path/to/model.fbx")');
-        console.log('gameVehicle.loadModel("path/to/model.glb", true)');
+        // Initialize
+        initScene();
     </script>
 </body>
 </html>
