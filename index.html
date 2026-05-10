@@ -277,7 +277,7 @@
         }
 
         function loadModel(modelFile) {
-            const url = `https://raw.githubusercontent.com/suprosmith-coder/nix-drift/main/models/${modelFile}`;
+            const url = `https://suprosmith-coder.github.io/nix-drift/models/${modelFile}`;
             const loader = new THREE.GLTFLoader();
 
             loader.load(
@@ -299,7 +299,12 @@
                 },
                 (error) => {
                     console.error('Load error:', error);
-                    alert('Failed to load model. Check console.');
+                    document.getElementById('modal').innerHTML = `
+                        <h2 style="color:#ff4444">LOAD FAILED</h2>
+                        <p style="color:#a0aeff; font-size:12px; margin-top:16px;">${error.message || 'Could not fetch model'}</p>
+                        <p style="color:#a0aeff; font-size:11px; margin-top:8px;">URL: ${url}</p>
+                        <button onclick="location.reload()" style="margin-top:20px">Try Again</button>
+                    `;
                 }
             );
         }
