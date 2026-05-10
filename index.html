@@ -18,7 +18,10 @@
       --muted: rgba(160,200,255,.8);
       --gold: #ffd700;
     }
-    *{-webkit-tap-highlight-color:transparent;touch-action:none;box-sizing:border-box;}
+    *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
+    /* Only block default touch handling on the game canvas & game controls, not menu buttons */
+    canvas, .dpad-btn, #brakeBtn, #pauseBtn{touch-action:none;}
+    button, .mk-car-card, .mk-toggle, .mk-start, .pause-btn, .pause-toggle{touch-action:auto;cursor:pointer;}
     html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:'IBM Plex Mono',monospace;color:#fff;}
     canvas{display:block;}
 
@@ -331,7 +334,7 @@
 
     /* Speed lines canvas */
     #speedCanvas{
-      position:fixed;inset:0;pointer-events:none;z-index:5;
+      position:fixed;inset:0;pointer-events:none;z-index:1;
     }
 
     /* Mobile Controls */
@@ -743,7 +746,16 @@
     renderer.setSize(innerWidth, innerHeight);
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
     renderer.shadowMap.enabled = false;
-    document.body.appendChild(renderer.domElement);
+    // Pin the canvas behind all UI overlays
+    const rc = renderer.domElement;
+    rc.style.position = 'fixed';
+    rc.style.top = '0';
+    rc.style.left = '0';
+    rc.style.zIndex = '0';
+    rc.style.pointerEvents = 'none'; // overlay/menu get clicks; game canvas gets pointer via its own listeners added below
+    document.body.appendChild(rc);
+    // Re-attach camera-drag listeners to window so they still work during gameplay
+    // (pointer-events:none on canvas is fine because we listen on window/document)
 
     scene = new THREE.Scene();
     fogColor = new THREE.Color(0x0a1020);
@@ -1498,11 +1510,11 @@
   const camOrbit={ yaw:0, pitch:0.32, dist:16, isDragging:false, lastX:0, lastY:0, touchId:null };
 
   function initCameraControls(){
-    const canvas=renderer.domElement;
-    canvas.addEventListener('mousedown',e=>{ camOrbit.isDragging=true; camOrbit.lastX=e.clientX; camOrbit.lastY=e.clientY; });
+    // Listen on window so drag works even though the canvas has pointer-events:none
+    window.addEventListener('mousedown',e=>{ if(gameRunning&&!gamePaused){ camOrbit.isDragging=true; camOrbit.lastX=e.clientX; camOrbit.lastY=e.clientY; } });
     window.addEventListener('mousemove',e=>{ if(!camOrbit.isDragging) return; camOrbit.yaw-=(e.clientX-camOrbit.lastX)*0.008; camOrbit.pitch=Math.max(0.1,Math.min(1.1,camOrbit.pitch+(e.clientY-camOrbit.lastY)*0.006)); camOrbit.lastX=e.clientX; camOrbit.lastY=e.clientY; });
     window.addEventListener('mouseup',()=>{ camOrbit.isDragging=false; });
-    canvas.addEventListener('touchstart',e=>{ for(const t of e.changedTouches){ if(t.clientY>innerHeight-220) continue; camOrbit.isDragging=true; camOrbit.touchId=t.identifier; camOrbit.lastX=t.clientX; camOrbit.lastY=t.clientY; break; } },{passive:true});
+    window.addEventListener('touchstart',e=>{ if(!gameRunning||gamePaused) return; for(const t of e.changedTouches){ if(t.clientY>innerHeight-220) continue; camOrbit.isDragging=true; camOrbit.touchId=t.identifier; camOrbit.lastX=t.clientX; camOrbit.lastY=t.clientY; break; } },{passive:true});
     window.addEventListener('touchmove',e=>{ if(!camOrbit.isDragging) return; for(const t of e.changedTouches){ if(t.identifier!==camOrbit.touchId) continue; camOrbit.yaw-=(t.clientX-camOrbit.lastX)*0.008; camOrbit.pitch=Math.max(0.1,Math.min(1.1,camOrbit.pitch+(t.clientY-camOrbit.lastY)*0.006)); camOrbit.lastX=t.clientX; camOrbit.lastY=t.clientY; } },{passive:true});
     window.addEventListener('touchend',e=>{ for(const t of e.changedTouches){ if(t.identifier===camOrbit.touchId){ camOrbit.isDragging=false; camOrbit.touchId=null; } } });
   }
