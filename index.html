@@ -632,10 +632,8 @@
     document.getElementById('hud').style.display = 'none';
     document.getElementById('overlay').style.display = 'flex';
     // Reset car
-    // Spawn position depends on whether map loaded
-    const spawnPos = usingMapMode ? mapSpawnPos : {x:0, y:0, z:0};
-    car.speed=0; car.posX=spawnPos.x; car.posY=spawnPos.y; car.posZ=spawnPos.z; car.rotY=0;
-    car.driftAngle=0; car.driftScore=0; car.isDrifting=false;
+    car.speed=0; car.posX=0; car.posY=0; car.posZ=0; car.rotY=0;
+    car.driftAngle=0; car.driftScore=0; car.isDrifting=false; car.suspBob=0;
     if(engineOsc) engineGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.2);
     // Remove map and restore procedural world
     if(mapMesh){ scene.remove(mapMesh); mapMesh=null; }
@@ -1143,15 +1141,17 @@
         {x:0,z:0}, {x:10,z:0}, {x:-10,z:0}, {x:0,z:10}, {x:0,z:-10},
         {x:20,z:20}, {x:-20,z:20}, {x:20,z:-20}, {x:-20,z:-20},
         {x:40,z:0}, {x:-40,z:0}, {x:0,z:40}, {x:0,z:-40},
-        {x:60,z:60}, {x:-60,z:60}, {x:60,z:-60}
+        {x:60,z:60}, {x:-60,z:60}, {x:60,z:-60}, {x:-60,z:-60},
+        {x:80,z:0}, {x:-80,z:0}, {x:0,z:80}, {x:0,z:-80},
+        {x:100,z:0}, {x:-100,z:0}, {x:0,z:100}, {x:0,z:-100}
       ];
 
       let found = false;
       for(const c of candidates){
         raycaster.set(new THREE.Vector3(c.x, 200, c.z), new THREE.Vector3(0,-1,0));
-        const hits = raycaster.intersectObjects(mapObjects, false);
+        const hits = raycaster.intersectObjects(mapObjects, true);
         if(hits.length > 0){
-          mapSpawnPos = { x: hits[0].point.x, y: hits[0].point.y + 1.0, z: hits[0].point.z };
+          mapSpawnPos = { x: hits[0].point.x, y: hits[0].point.y + 2.5, z: hits[0].point.z };
           found = true;
           console.log('Map spawn found at', mapSpawnPos);
           break;
@@ -1160,7 +1160,7 @@
       if(!found){
         // Fallback: sit on top of the map bounding box center
         const b = new THREE.Box3().setFromObject(model);
-        mapSpawnPos = { x:0, y: b.max.y + 1.0, z:0 };
+        mapSpawnPos = { x:0, y: b.max.y + 2.5, z:0 };
         console.log('Map spawn fallback at', mapSpawnPos);
       }
 
@@ -1195,8 +1195,8 @@
     car.accel = stats.accel;
     car.friction = stats.friction;
     car.turnSpeed = stats.turnSpeed;
-    car.speed=0; car.posX=0; car.posY=0; car.posZ=0; car.rotY=0;
-    car.driftAngle=0; car.driftScore=0; car.isDrifting=false;
+    car.speed=0; car.rotY=0;
+    car.driftAngle=0; car.driftScore=0; car.isDrifting=false; car.suspBob=0;
 
     document.getElementById('startBtn').disabled = true;
     initAudio();
@@ -1209,6 +1209,15 @@
         if(vehicleMesh) scene.remove(vehicleMesh);
         vehicleMesh = model;
         scene.add(vehicleMesh);
+        // Apply spawn position AFTER map (and car model) are ready
+        if(usingMapMode){
+          car.posX = mapSpawnPos.x;
+          car.posY = mapSpawnPos.y;
+          car.posZ = mapSpawnPos.z;
+        } else {
+          car.posX = 0; car.posY = 0; car.posZ = 0;
+        }
+        vehicleMesh.position.set(car.posX, car.posY + car.suspBob, car.posZ);
         document.getElementById('overlay').style.display='none';
         document.getElementById('hud').style.display='block';
         document.getElementById('carChip').textContent=`🚗 ${CAR_NAMES[selectedCar]}`;
@@ -1430,11 +1439,11 @@
   /* ============================================================
      GAME LOOP
   ============================================================ */
-  let lastTime=0;
+  let lastTime = performance.now();
   function tick(ts){
     requestAnimationFrame(tick);
-    const dt=Math.min((ts-lastTime)/1000, 0.05);
-    lastTime=ts;
+    const dt = Math.min((ts - lastTime) / 1000, 0.05);
+    lastTime = ts;
 
     if(gameRunning&&!gamePaused){
       updateVehicle(dt);
