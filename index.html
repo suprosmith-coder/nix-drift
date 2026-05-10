@@ -154,12 +154,20 @@
         <p style="color: #a0aeff; margin-bottom: 24px; font-size: 12px;">Select Your Ride</p>
         <button onclick="selectCar('camaro')">2019 Camaro ZL1</button>
         <button onclick="selectCar('hellcat')">2020 Dodge Hellcat</button>
+        <p id="js-status" style="color:#ff4444; margin-top: 16px; font-size: 11px;"></p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@r128/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
+        // Catch any JS errors and show on screen
+        window.onerror = function(msg, src, line, col, err) {
+            const el = document.getElementById('js-status');
+            if (el) el.textContent = `Error: ${msg} (line ${line})`;
+            return false;
+        };
+
         // Game variables
         let scene, camera, renderer;
         let vehicle;
