@@ -186,7 +186,8 @@
       <b>W/↑</b> Accelerate<br>
       <b>S/↓</b> Brake<br>
       <b>A/←</b> Left &nbsp;<b>D/→</b> Right<br>
-      <b>Space</b> Handbrake
+      <b>Space</b> Handbrake<br>
+      <b>Drag</b> Rotate camera
     </div>
     <div id="toast"></div>
 
@@ -566,15 +567,89 @@
   const _camPos = new THREE.Vector3();
   const _camLook = new THREE.Vector3();
 
+  // Camera rotation state
+  const camOrbit = {
+    yaw: 0,        // horizontal offset from behind-car default (radians)
+    pitch: 0.35,   // vertical angle (radians, 0=horizontal, ~0.5=high)
+    dist: 16,
+    isDragging: false,
+    lastX: 0,
+    lastY: 0,
+    touchId: null  // which touch finger is orbiting
+  };
+
+  function initCameraControls() {
+    const canvas = renderer.domElement;
+
+    // Mouse
+    canvas.addEventListener('mousedown', e => {
+      // Only orbit if not clicking mobile buttons
+      camOrbit.isDragging = true;
+      camOrbit.lastX = e.clientX;
+      camOrbit.lastY = e.clientY;
+    });
+    window.addEventListener('mousemove', e => {
+      if (!camOrbit.isDragging) return;
+      const dx = e.clientX - camOrbit.lastX;
+      const dy = e.clientY - camOrbit.lastY;
+      camOrbit.yaw   -= dx * 0.008;
+      camOrbit.pitch  = Math.max(0.1, Math.min(1.1, camOrbit.pitch + dy * 0.006));
+      camOrbit.lastX = e.clientX;
+      camOrbit.lastY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => { camOrbit.isDragging = false; });
+
+    // Touch — only track touches that START on the canvas (not on buttons)
+    canvas.addEventListener('touchstart', e => {
+      // Use first available touch not already tracked
+      for (const t of e.changedTouches) {
+        // ignore touches that landed on D-pad / brake area (bottom 200px)
+        if (t.clientY > innerHeight - 200) continue;
+        camOrbit.isDragging = true;
+        camOrbit.touchId = t.identifier;
+        camOrbit.lastX = t.clientX;
+        camOrbit.lastY = t.clientY;
+        break;
+      }
+    }, { passive:true });
+
+    window.addEventListener('touchmove', e => {
+      if (!camOrbit.isDragging) return;
+      for (const t of e.changedTouches) {
+        if (t.identifier !== camOrbit.touchId) continue;
+        const dx = t.clientX - camOrbit.lastX;
+        const dy = t.clientY - camOrbit.lastY;
+        camOrbit.yaw   -= dx * 0.008;
+        camOrbit.pitch  = Math.max(0.1, Math.min(1.1, camOrbit.pitch + dy * 0.006));
+        camOrbit.lastX = t.clientX;
+        camOrbit.lastY = t.clientY;
+      }
+    }, { passive:true });
+
+    window.addEventListener('touchend', e => {
+      for (const t of e.changedTouches) {
+        if (t.identifier === camOrbit.touchId) {
+          camOrbit.isDragging = false;
+          camOrbit.touchId = null;
+        }
+      }
+    });
+  }
+
   function updateCamera() {
-    const dist = 16, height = 7;
-    _camPos.set(
-      car.posX - Math.sin(car.rotY) * dist,
-      car.posY + height,
-      car.posZ - Math.cos(car.rotY) * dist
-    );
+    // Smoothly return yaw to 0 when not dragging (snap back behind car)
+    if (!camOrbit.isDragging) {
+      camOrbit.yaw *= 0.92;
+    }
+
+    const totalAngle = car.rotY + camOrbit.yaw + Math.PI;
+    const px = car.posX + Math.sin(totalAngle) * camOrbit.dist * Math.cos(camOrbit.pitch);
+    const py = car.posY + Math.sin(camOrbit.pitch) * camOrbit.dist;
+    const pz = car.posZ + Math.cos(totalAngle) * camOrbit.dist * Math.cos(camOrbit.pitch);
+
+    _camPos.set(px, py, pz);
     camera.position.lerp(_camPos, 0.1);
-    _camLook.set(car.posX, car.posY + 2, car.posZ);
+    _camLook.set(car.posX, car.posY + 1.5, car.posZ);
     camera.lookAt(_camLook);
   }
 
@@ -618,6 +693,7 @@
   ============================================================ */
   initScene();
   initMobileControls();
+  initCameraControls();
   requestAnimationFrame(tick);
   </script>
 </body>
