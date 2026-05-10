@@ -25,191 +25,314 @@
     html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:'IBM Plex Mono',monospace;color:#fff;}
     canvas{display:block;}
 
-    /* ===================== OVERLAY / MENU ===================== */
+    /* ===================== STINKER GAMES MENU ===================== */
     #overlay{
       position:fixed;inset:0;z-index:100;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      background:linear-gradient(180deg,#020510 0%,#060a1a 60%,#020510 100%);
+      display:flex;
+      background:#0a0c0f;
       overflow:hidden;
     }
-    /* Animated road perspective at bottom */
-    #menuRoad{
-      position:absolute;bottom:0;left:0;right:0;height:45%;
-      background:linear-gradient(180deg,transparent 0%,#0d1526 30%,#111927 100%);
-      perspective:400px;transform-style:preserve-3d;
-      overflow:hidden;
-    }
-    #menuRoadSurface{
-      position:absolute;bottom:0;left:-20%;width:140%;height:100%;
-      background:repeating-linear-gradient(180deg,
-        transparent 0px,transparent 28px,
-        rgba(0,255,136,.06) 28px,rgba(0,255,136,.06) 30px
-      );
-      animation:roadScroll 0.6s linear infinite;
-    }
-    @keyframes roadScroll{
-      from{transform:translateY(0);}
-      to{transform:translateY(30px);}
-    }
-    /* Neon road stripes */
-    #menuRoadStripes{
-      position:absolute;bottom:0;left:0;right:0;height:100%;
-      background:
-        linear-gradient(180deg, transparent 0%, rgba(0,255,136,.15) 100%) 0 0 / 2px 100% no-repeat,
-        linear-gradient(180deg, transparent 0%, rgba(0,255,136,.15) 100%) 100% 0 / 2px 100% no-repeat,
-        linear-gradient(180deg, transparent 0%, rgba(0,200,255,.08) 100%) 50% 0 / 1px 100% no-repeat;
-    }
-    /* Stars */
-    #menuStars{
+    /* Background art panel */
+    #menuBg{
       position:absolute;inset:0;
-      background:radial-gradient(1px 1px at 20% 15%,#fff,transparent),
-        radial-gradient(1px 1px at 80% 8%,#fff,transparent),
-        radial-gradient(1.5px 1.5px at 45% 25%,rgba(0,200,255,.8),transparent),
-        radial-gradient(1px 1px at 10% 40%,#fff,transparent),
-        radial-gradient(1px 1px at 90% 30%,#fff,transparent),
-        radial-gradient(1px 1px at 65% 12%,rgba(255,255,255,.6),transparent),
-        radial-gradient(1px 1px at 35% 5%,#fff,transparent),
-        radial-gradient(1.5px 1.5px at 72% 20%,rgba(0,255,136,.5),transparent),
-        radial-gradient(1px 1px at 55% 35%,#fff,transparent),
-        radial-gradient(1px 1px at 15% 22%,rgba(255,255,255,.5),transparent);
+      background:
+        radial-gradient(ellipse 70% 80% at 70% 60%, rgba(30,40,60,.7) 0%, transparent 70%),
+        linear-gradient(135deg,#050810 0%,#0e1522 50%,#080c14 100%);
+      overflow:hidden;
     }
+    /* Dramatic storm sky atmosphere */
+    #menuBgAtmo{
+      position:absolute;inset:0;
+      background:
+        radial-gradient(ellipse 120% 60% at 60% 20%, rgba(80,100,150,.18) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 40% at 80% 0%, rgba(200,160,80,.08) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 80% at 100% 50%, rgba(20,30,50,.5) 0%, transparent 60%);
+    }
+    /* Rain streaks */
+    #menuRain{position:absolute;inset:0;overflow:hidden;opacity:.22;}
+    .rain-layer{
+      position:absolute;inset:-20% 0;
+      background:repeating-linear-gradient(
+        168deg,
+        transparent 0px,transparent 3px,
+        rgba(180,210,255,.6) 3px,rgba(180,210,255,.6) 3.5px,
+        transparent 3.5px,transparent 22px
+      );
+    }
+    .rain-layer:nth-child(1){animation:rainFall 0.55s linear infinite;opacity:.5;}
+    .rain-layer:nth-child(2){background-size:40px 40px;animation:rainFall 0.7s linear infinite .15s;opacity:.35;}
+    .rain-layer:nth-child(3){background-size:60px 60px;animation:rainFall 0.9s linear infinite .3s;opacity:.25;}
+    @keyframes rainFall{from{transform:translateY(-20%);}to{transform:translateY(20%);}}
+    /* Spotlight sweep on road */
+    #menuSpotlight{
+      position:absolute;bottom:0;left:0;right:0;height:55%;
+      background:linear-gradient(180deg,transparent 0%,rgba(8,12,22,.6) 40%,rgba(6,9,18,.95) 100%);
+    }
+    /* Wet road reflection */
+    #menuRoadWet{
+      position:absolute;bottom:0;left:0;right:0;height:35%;
+      background:
+        linear-gradient(180deg,transparent 0%,rgba(0,180,255,.03) 50%,rgba(0,150,200,.06) 100%),
+        repeating-linear-gradient(90deg,transparent 0%,transparent 48%,rgba(0,200,255,.04) 48%,rgba(0,200,255,.04) 52%,transparent 52%);
+      animation:roadPulse 3s ease-in-out infinite;
+    }
+    @keyframes roadPulse{0%,100%{opacity:.8;}50%{opacity:1;}}
 
-    /* Title logo */
-    .menu-logo{
-      position:relative;z-index:2;
-      font-family:'Orbitron',monospace;
-      font-size:clamp(32px,8vw,64px);
-      font-weight:900;
-      letter-spacing:6px;
-      color:#fff;
-      text-shadow:0 0 30px rgba(0,255,136,.6),0 0 60px rgba(0,255,136,.3),0 0 100px rgba(0,255,136,.15);
-      margin-bottom:4px;
-      animation:logoFloat 3s ease-in-out infinite;
+    /* ── Car showcase canvas in menu ── */
+    #menuCarCanvas{
+      position:absolute;right:-2%;bottom:0;
+      width:72%;height:90%;
+      z-index:2;pointer-events:none;
     }
-    @keyframes logoFloat{
-      0%,100%{transform:translateY(0);}
-      50%{transform:translateY(-6px);}
+    /* Glow halo under car */
+    #menuCarGlow{
+      position:absolute;right:8%;bottom:14%;
+      width:55%;height:22%;
+      background:radial-gradient(ellipse,rgba(80,200,120,.18) 0%,transparent 70%);
+      z-index:1;
+      animation:glowPulse 2.5s ease-in-out infinite;
     }
-    .menu-sub{
-      position:relative;z-index:2;
-      font-size:11px;letter-spacing:4px;
-      color:rgba(0,255,136,.5);margin-bottom:32px;text-transform:uppercase;
+    @keyframes glowPulse{0%,100%{opacity:.7;}50%{opacity:1;}}
+    /* Minimap in corner */
+    #menuMinimap{
+      position:absolute;right:24px;top:18px;
+      width:180px;height:130px;
+      background:rgba(0,0,0,.6);
+      border:1px solid rgba(80,220,140,.2);
+      border-radius:10px;overflow:hidden;z-index:10;
+      backdrop-filter:blur(4px);
     }
+    #menuMinimapCanvas{width:100%;height:100%;display:block;}
+    .mm-label{
+      position:absolute;top:6px;left:8px;
+      font-family:'Orbitron',monospace;font-size:7px;
+      color:rgba(80,220,140,.6);letter-spacing:2px;
+    }
+    /* Player info chip top right */
+    #menuPlayerChip{
+      position:absolute;right:222px;top:18px;
+      background:rgba(0,0,0,.65);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:10px;padding:8px 14px;
+      z-index:10;backdrop-filter:blur(6px);
+      display:flex;flex-direction:column;gap:3px;
+    }
+    .pc-name{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#fff;letter-spacing:2px;}
+    .pc-level{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1px;}
+    .pc-xpbar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:3px;overflow:hidden;}
+    .pc-xpfill{height:100%;background:linear-gradient(90deg,#00ff88,#00c8ff);border-radius:2px;width:69%;}
+    .pc-coins{font-size:9px;color:#ffd700;margin-top:2px;}
 
-    /* Mario Kart style car select grid */
-    .mk-panel{
-      position:relative;z-index:2;
-      width:min(520px,calc(100vw - 24px));
+    /* ── NEWS ticker bottom right ── */
+    #menuNews{
+      position:absolute;right:24px;bottom:28px;
+      width:200px;z-index:10;
     }
-    .mk-section-label{
-      font-family:'Orbitron',monospace;
-      font-size:10px;letter-spacing:3px;
-      color:rgba(0,255,136,.5);
-      margin-bottom:10px;text-align:center;
+    .news-label{
+      font-family:'Orbitron',monospace;font-size:8px;color:rgba(80,220,140,.7);
+      letter-spacing:2px;margin-bottom:5px;
     }
-    .mk-car-row{
-      display:flex;gap:10px;margin-bottom:16px;justify-content:center;
+    .news-card{
+      background:rgba(0,0,0,.7);border:1px solid rgba(80,220,140,.15);
+      border-radius:8px;overflow:hidden;backdrop-filter:blur(4px);
     }
-    .mk-car-card{
-      flex:1;max-width:160px;
-      background:rgba(0,0,0,.5);
-      border:2px solid rgba(0,255,136,.15);
-      border-radius:16px;padding:14px 8px 10px;
-      cursor:pointer;text-align:center;
-      transition:all .2s cubic-bezier(.34,1.56,.64,1);
+    .news-img{
+      width:100%;height:64px;
+      background:linear-gradient(135deg,#0a1020,#1a2540);
       position:relative;overflow:hidden;
     }
-    .mk-car-card::before{
+    .news-img::after{
       content:'';position:absolute;inset:0;
-      background:linear-gradient(135deg,rgba(0,255,136,.06),transparent);
-      opacity:0;transition:opacity .2s;
+      background:linear-gradient(135deg,rgba(255,80,40,.1),rgba(20,30,60,.6));
     }
-    .mk-car-card:hover,.mk-car-card.selected{
-      border-color:var(--good);
-      box-shadow:0 0 24px rgba(0,255,136,.25),inset 0 0 30px rgba(0,255,136,.06);
-      transform:translateY(-4px) scale(1.03);
+    .news-img-gfx{
+      position:absolute;inset:0;
+      background:
+        radial-gradient(circle at 60% 50%, rgba(255,100,40,.15) 0%, transparent 50%),
+        linear-gradient(45deg,#0a1020,#1a2030);
+      display:flex;align-items:center;justify-content:center;
+      font-size:28px;color:rgba(255,255,255,.3);
     }
-    .mk-car-card:hover::before,.mk-car-card.selected::before{opacity:1;}
-    .mk-car-card.selected .mk-car-check{opacity:1;}
-    .mk-car-check{
-      position:absolute;top:8px;right:8px;
-      width:18px;height:18px;border-radius:50%;
-      background:var(--good);color:#000;
-      font-size:10px;display:flex;align-items:center;justify-content:center;
-      font-weight:900;opacity:0;transition:opacity .2s;
+    .news-text{padding:8px 10px;}
+    .news-hl{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:.5px;line-height:1.4;}
+    .news-sub{font-size:8px;color:rgba(80,220,140,.6);margin-top:4px;}
+    .news-dots{display:flex;gap:4px;margin-top:8px;justify-content:center;}
+    .news-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.15);}
+    .news-dot.active{background:rgba(80,220,140,.8);}
+
+    /* ── SOCIAL icons bottom left ── */
+    #menuSocial{
+      position:absolute;left:0;bottom:20px;
+      display:flex;gap:0;align-items:center;z-index:10;
+      padding-left:28px;
     }
-    .mk-car-icon{font-size:32px;display:block;margin-bottom:6px;}
-    .mk-car-name{
+    .soc-icon{
+      width:30px;height:30px;border-radius:6px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;color:rgba(255,255,255,.35);
+      transition:color .2s;margin-right:6px;cursor:pointer;
+    }
+    .soc-icon:hover{color:rgba(80,220,140,.8);}
+    .soc-tagline{font-size:9px;color:rgba(255,255,255,.2);letter-spacing:2px;margin-left:6px;font-family:'Orbitron',monospace;}
+
+    /* ── LEFT SIDEBAR MENU ── */
+    #menuSidebar{
+      position:relative;z-index:10;
+      width:min(280px,52vw);
+      padding:28px 0 28px 28px;
+      display:flex;flex-direction:column;
+      justify-content:space-between;
+      flex-shrink:0;
+    }
+    /* Logo */
+    .sg-logo{
       font-family:'Orbitron',monospace;
-      font-size:9px;font-weight:700;letter-spacing:1px;
-      color:var(--good);margin-bottom:2px;
+      font-weight:900;
+      line-height:0.88;
+      margin-bottom:32px;
+      user-select:none;
     }
-    .mk-car-year{font-size:8px;color:rgba(255,255,255,.3);margin-bottom:2px;}
-    .mk-car-spec{
-      margin-top:7px;font-size:7.5px;letter-spacing:.5px;
-      color:rgba(0,255,136,.35);border-top:1px solid rgba(0,255,136,.08);
-      padding-top:5px;line-height:1.4;
+    .sg-logo-line1{
+      font-size:clamp(28px,5.5vw,52px);
+      color:#fff;
+      text-shadow:
+        3px 3px 0 #000,
+        0 0 40px rgba(80,220,120,.5),
+        -1px -1px 0 rgba(0,0,0,.8);
+      letter-spacing:3px;
+      display:block;
     }
-    /* Stat bars */
-    .mk-stats{display:flex;flex-direction:column;gap:3px;margin-top:8px;}
-    .mk-stat{display:flex;align-items:center;gap:6px;font-size:8px;color:rgba(255,255,255,.4);}
-    .mk-stat-bar{flex:1;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
-    .mk-stat-fill{height:100%;border-radius:2px;background:var(--good);transition:width .4s;}
-
-    /* Settings row */
-    .mk-settings-row{
-      display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;
+    .sg-logo-accent{color:#7aff5a;}
+    .sg-logo-line2{
+      font-size:clamp(18px,3.5vw,34px);
+      color:rgba(255,255,255,.85);
+      letter-spacing:4px;
+      display:block;
+      text-shadow:2px 2px 0 #000;
     }
-    .mk-setting{
-      flex:1;min-width:120px;
-      background:rgba(0,0,0,.4);
-      border:1px solid rgba(255,255,255,.1);
-      border-radius:12px;padding:10px 12px;
-    }
-    .mk-setting-label{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:6px;}
-    .mk-toggle-row{display:flex;gap:4px;}
-    .mk-toggle{
-      flex:1;padding:5px 4px;
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:8px;font-size:9px;
-      color:rgba(255,255,255,.4);cursor:pointer;text-align:center;
-      transition:all .15s;font-family:inherit;
-    }
-    .mk-toggle.active{
-      background:rgba(0,255,136,.12);
-      border-color:var(--good);color:var(--good);
+    .sg-logo-line3{
+      font-size:clamp(14px,2.5vw,24px);
+      color:#7aff5a;
+      letter-spacing:6px;
+      display:block;
+      font-style:italic;
+      text-shadow:0 0 20px rgba(80,255,80,.4),2px 2px 0 rgba(0,0,0,.6);
     }
 
-    /* Start button MK style */
-    .mk-start{
-      width:100%;padding:14px;
-      background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,200,255,.08));
-      border:2px solid var(--good);
-      color:var(--good);border-radius:14px;
+    /* Nav items */
+    .sg-nav{display:flex;flex-direction:column;gap:5px;flex:1;}
+    .sg-nav-item{
+      display:flex;align-items:center;gap:14px;
+      padding:11px 16px 11px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      position:relative;
+      border:1px solid transparent;
+      transition:all .18s cubic-bezier(.34,1.56,.64,1);
+      touch-action:auto;
+      -webkit-tap-highlight-color:transparent;
+      user-select:none;
+    }
+    .sg-nav-item:hover,.sg-nav-item.active{
+      background:rgba(122,255,90,.1);
+      border-color:rgba(122,255,90,.35);
+      transform:translateX(6px);
+    }
+    .sg-nav-item.active{
+      background:rgba(122,255,90,.16);
+      border-color:rgba(122,255,90,.55);
+    }
+    .sg-nav-item.active::before{
+      content:'';position:absolute;left:0;top:20%;bottom:20%;
+      width:3px;border-radius:3px;
+      background:#7aff5a;
+      box-shadow:0 0 8px rgba(122,255,90,.6);
+    }
+    .sg-nav-icon{
+      width:34px;height:34px;border-radius:8px;
+      background:rgba(255,255,255,.05);
+      display:flex;align-items:center;justify-content:center;
+      font-size:16px;flex-shrink:0;
+      border:1px solid rgba(255,255,255,.07);
+    }
+    .sg-nav-item.active .sg-nav-icon,.sg-nav-item:hover .sg-nav-icon{
+      background:rgba(122,255,90,.12);
+      border-color:rgba(122,255,90,.3);
+    }
+    .sg-nav-label{
+      font-family:'Orbitron',monospace;
+      font-size:clamp(11px,1.6vw,15px);
+      font-weight:700;letter-spacing:2px;
+      color:rgba(255,255,255,.6);
+      transition:color .18s;
+    }
+    .sg-nav-item.active .sg-nav-label,.sg-nav-item:hover .sg-nav-label{
+      color:#fff;
+    }
+    .sg-nav-item.danger .sg-nav-label{color:rgba(255,80,80,.5);}
+    .sg-nav-item.danger:hover .sg-nav-label{color:rgba(255,100,100,.9);}
+    .sg-nav-item.danger:hover{background:rgba(255,60,60,.08);border-color:rgba(255,60,60,.3);}
+
+    /* Sub-panel: car select (shown when RACE is active) */
+    #sgCarSelect{
+      display:none;
+      flex-direction:column;gap:6px;
+      margin-top:8px;padding-top:8px;
+      border-top:1px solid rgba(122,255,90,.1);
+    }
+    #sgCarSelect.visible{display:flex;}
+    .sg-car-opt{
+      display:flex;align-items:center;gap:10px;
+      padding:8px 12px;border-radius:8px;
+      background:rgba(0,0,0,.3);
+      border:1px solid rgba(255,255,255,.07);
+      cursor:pointer;transition:all .15s;
+    }
+    .sg-car-opt:hover,.sg-car-opt.selected{
+      border-color:rgba(122,255,90,.4);
+      background:rgba(122,255,90,.08);
+    }
+    .sg-car-opt.selected::after{content:'✓';margin-left:auto;color:#7aff5a;font-size:11px;}
+    .sg-car-icon2{font-size:18px;}
+    .sg-car-info{}
+    .sg-car-name2{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#fff;letter-spacing:1px;}
+    .sg-car-hp{font-size:8px;color:rgba(122,255,90,.5);}
+
+    /* Start button */
+    .sg-start{
+      margin-top:14px;width:100%;padding:13px 16px;
+      background:linear-gradient(135deg,rgba(122,255,90,.15),rgba(80,200,255,.08));
+      border:2px solid #7aff5a;
+      color:#7aff5a;border-radius:12px;
       cursor:pointer;font-family:'Orbitron',monospace;
-      font-size:14px;font-weight:900;letter-spacing:3px;
-      transition:all .2s;position:relative;overflow:hidden;
+      font-size:13px;font-weight:900;letter-spacing:3px;
+      transition:all .2s;touch-action:auto;
+      text-shadow:0 0 10px rgba(122,255,90,.4);
     }
-    .mk-start::after{
-      content:'';position:absolute;inset:0;
-      background:linear-gradient(90deg,transparent,rgba(0,255,136,.15),transparent);
-      transform:translateX(-100%);transition:transform 0s;
+    .sg-start:hover{
+      background:linear-gradient(135deg,rgba(122,255,90,.25),rgba(80,200,255,.15));
+      box-shadow:0 0 28px rgba(122,255,90,.3);
+      transform:translateY(-2px);
     }
-    .mk-start:hover{
-      background:linear-gradient(135deg,rgba(0,255,136,.25),rgba(0,200,255,.15));
-      box-shadow:0 0 30px rgba(0,255,136,.3);
-      transform:translateY(-1px);
-    }
-    .mk-start:hover::after{
-      transform:translateX(100%);transition:transform .5s;
-    }
-    .mk-start:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-    #loadingMsg{color:var(--muted);font-size:11px;margin-top:10px;text-align:center;min-height:16px;}
+    .sg-start:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+    #loadingMsg{color:var(--muted);font-size:11px;margin-top:8px;text-align:center;min-height:16px;}
     #errorMsg{color:var(--red);font-size:10px;margin-top:6px;text-align:center;display:none;line-height:1.5;}
-    .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,255,136,.2);border-top:2px solid var(--good);border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:6px;}
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(122,255,90,.2);border-top:2px solid #7aff5a;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:6px;}
     @keyframes spin{to{transform:rotate(360deg);}}
 
+    /* mk-toggle reused in settings sub-panel */
+    .mk-toggle{
+      flex:1;padding:6px 4px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:8px;font-size:10px;
+      color:rgba(255,255,255,.4);cursor:pointer;text-align:center;
+      transition:all .15s;font-family:inherit;touch-action:auto;
+    }
+    .mk-toggle.active{
+      background:rgba(122,255,90,.12);
+      border-color:#7aff5a;color:#7aff5a;
+    }
     /* ===================== PAUSE MENU ===================== */
     #pauseOverlay{
       position:fixed;inset:0;z-index:90;
@@ -475,61 +598,143 @@
 
   <!-- ========== MENU ========== -->
   <div id="overlay">
-    <div id="menuStars"></div>
-    <div id="menuRoad">
-      <div id="menuRoadSurface"></div>
-      <div id="menuRoadStripes"></div>
+    <!-- Background -->
+    <div id="menuBg">
+      <div id="menuBgAtmo"></div>
+      <div id="menuRain">
+        <div class="rain-layer"></div>
+        <div class="rain-layer"></div>
+        <div class="rain-layer"></div>
+      </div>
+      <div id="menuSpotlight"></div>
+      <div id="menuRoadWet"></div>
     </div>
-    <div class="menu-logo">NEON DRIFT</div>
-    <div class="menu-sub">▸ A meditative drive through infinite roads ◂</div>
-    <div class="mk-panel">
-      <div class="mk-section-label">— SELECT YOUR RIDE —</div>
-      <div class="mk-car-row">
-        <div class="mk-car-card selected" id="btn-camaro" onclick="selectCar('camaro',this)">
-          <div class="mk-car-check">✓</div>
-          <span class="mk-car-icon">🏎️</span>
-          <div class="mk-car-name">CAMARO ZL1</div>
-          <div class="mk-car-year">2019 · 650 HP · 6.2L V8</div>
-          <div class="mk-stats">
-            <div class="mk-stat"><span>SPD</span><div class="mk-stat-bar"><div class="mk-stat-fill" style="width:88%"></div></div><span style="font-size:7px;opacity:.4">202mph</span></div>
-            <div class="mk-stat"><span>0-60</span><div class="mk-stat-bar"><div class="mk-stat-fill" style="width:85%"></div></div><span style="font-size:7px;opacity:.4">3.5s</span></div>
-            <div class="mk-stat"><span>HND</span><div class="mk-stat-bar"><div class="mk-stat-fill" style="width:78%"></div></div><span style="font-size:7px;opacity:.4">3,900lb</span></div>
-          </div>
-          <div class="mk-car-spec">6-spd Manual · RWD · 650 lb-ft</div>
+
+    <!-- Car glow -->
+    <div id="menuCarGlow"></div>
+    <!-- 3D Car canvas (rendered by Three.js) -->
+    <canvas id="menuCarCanvas"></canvas>
+
+    <!-- Player chip -->
+    <div id="menuPlayerChip">
+      <div class="pc-name">PLAYER</div>
+      <div class="pc-level">LEVEL 1</div>
+      <div class="pc-xpbar"><div class="pc-xpfill"></div></div>
+      <div class="pc-coins">💰 0</div>
+    </div>
+
+    <!-- Minimap -->
+    <div id="menuMinimap">
+      <div class="mm-label">TRACK MAP</div>
+      <canvas id="menuMinimapCanvas" width="180" height="130"></canvas>
+    </div>
+
+    <!-- News -->
+    <div id="menuNews">
+      <div class="news-label">LATEST NEWS</div>
+      <div class="news-card">
+        <div class="news-img"><div class="news-img-gfx">🏁</div></div>
+        <div class="news-text">
+          <div class="news-hl">NEW TRACKS. NEW RIVALS.</div>
+          <div class="news-sub">UPDATE 1.2 IS OUT NOW!</div>
         </div>
-        <div class="mk-car-card" id="btn-hellcat" onclick="selectCar('hellcat',this)">
-          <div class="mk-car-check">✓</div>
-          <span class="mk-car-icon">🐱</span>
-          <div class="mk-car-name">HELLCAT DAYTONA</div>
-          <div class="mk-car-year">2020 · 717 HP · 6.2L HEMI V8</div>
-          <div class="mk-stats">
-            <div class="mk-stat"><span>SPD</span><div class="mk-stat-bar"><div class="mk-stat-fill" style="width:85%"></div></div><span style="font-size:7px;opacity:.4">196mph</span></div>
-            <div class="mk-stat"><span>0-60</span><div class="mk-stat-bar"><div class="mk-stat-fill" style="width:83%"></div></div><span style="font-size:7px;opacity:.4">3.6s</span></div>
-            <div class="mk-stat"><span>HND</span><div class="mk-stat-bar"><div class="mk-stat-fill" style="width:52%"></div></div><span style="font-size:7px;opacity:.4">4,600lb</span></div>
-          </div>
-          <div class="mk-car-spec">8-spd Auto · RWD · 650 lb-ft</div>
-        </div>
-      </div>
-      <div class="mk-settings-row">
-        <div class="mk-setting">
-          <div class="mk-setting-label">TIME OF DAY</div>
-          <div class="mk-toggle-row">
-            <button class="mk-toggle" id="mDay" onclick="menuTOD('day')">☀️</button>
-            <button class="mk-toggle active" id="mNight" onclick="menuTOD('night')">🌙</button>
-            <button class="mk-toggle" id="mAuto" onclick="menuTOD('auto')">🔄</button>
-          </div>
-        </div>
-        <div class="mk-setting">
-          <div class="mk-setting-label">SOUND</div>
-          <div class="mk-toggle-row">
-            <button class="mk-toggle active" id="mSoundOn" onclick="menuSound(true)">ON</button>
-            <button class="mk-toggle" id="mSoundOff" onclick="menuSound(false)">OFF</button>
-          </div>
+        <div class="news-dots">
+          <div class="news-dot active"></div>
+          <div class="news-dot"></div>
+          <div class="news-dot"></div>
         </div>
       </div>
-      <button class="mk-start" id="startBtn" onclick="startGame()">▶ START DRIVING</button>
-      <div id="loadingMsg"></div>
-      <div id="errorMsg"></div>
+    </div>
+
+    <!-- Social -->
+    <div id="menuSocial">
+      <div class="soc-icon">▶</div>
+      <div class="soc-icon">⬡</div>
+      <div class="soc-icon">📷</div>
+      <div class="soc-icon">✖</div>
+      <div class="soc-tagline">THANKS FOR PLAYING!</div>
+    </div>
+
+    <!-- LEFT SIDEBAR -->
+    <div id="menuSidebar">
+      <div>
+        <!-- Logo -->
+        <div class="sg-logo">
+          <span class="sg-logo-line1">NEON<span class="sg-logo-accent"> DRIFT</span></span>
+          <span class="sg-logo-line2">GAMES</span>
+          <span class="sg-logo-line3">RACING</span>
+        </div>
+
+        <!-- Nav -->
+        <div class="sg-nav">
+          <div class="sg-nav-item active" id="navRace" onclick="sgNav('race',this)">
+            <div class="sg-nav-icon">🏁</div>
+            <span class="sg-nav-label">RACE</span>
+          </div>
+
+          <!-- Car select sub-menu -->
+          <div id="sgCarSelect" class="visible">
+            <div class="sg-car-opt selected" id="sco-camaro" onclick="selectCar('camaro',this)">
+              <span class="sg-car-icon2">🏎️</span>
+              <div class="sg-car-info">
+                <div class="sg-car-name2">CAMARO ZL1</div>
+                <div class="sg-car-hp">650 HP · 2019</div>
+              </div>
+            </div>
+            <div class="sg-car-opt" id="sco-hellcat" onclick="selectCar('hellcat',this)">
+              <span class="sg-car-icon2">🐱</span>
+              <div class="sg-car-info">
+                <div class="sg-car-name2">HELLCAT DAYTONA</div>
+                <div class="sg-car-hp">717 HP · 2020</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sg-nav-item" id="navGarage" onclick="sgNav('garage',this)">
+            <div class="sg-nav-icon">🏠</div>
+            <span class="sg-nav-label">GARAGE</span>
+          </div>
+          <div class="sg-nav-item" id="navCareer" onclick="sgNav('career',this)">
+            <div class="sg-nav-icon">🏆</div>
+            <span class="sg-nav-label">CAREER</span>
+          </div>
+          <div class="sg-nav-item" id="navChallenges" onclick="sgNav('challenges',this)">
+            <div class="sg-nav-icon">⚡</div>
+            <span class="sg-nav-label">CHALLENGES</span>
+          </div>
+          <div class="sg-nav-item" id="navSettings" onclick="sgNav('settings',this)">
+            <div class="sg-nav-icon">⚙️</div>
+            <span class="sg-nav-label">SETTINGS</span>
+          </div>
+
+          <!-- Settings sub-panel -->
+          <div id="sgSettings" style="display:none;padding:10px 0 0 14px;border-top:1px solid rgba(122,255,90,.1);margin-top:4px;">
+            <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:8px;">TIME OF DAY</div>
+            <div style="display:flex;gap:4px;margin-bottom:10px;">
+              <button class="mk-toggle" id="mDay" onclick="menuTOD('day');event.stopPropagation()">☀️</button>
+              <button class="mk-toggle active" id="mNight" onclick="menuTOD('night');event.stopPropagation()">🌙</button>
+              <button class="mk-toggle" id="mAuto" onclick="menuTOD('auto');event.stopPropagation()">🔄</button>
+            </div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:8px;">SOUND</div>
+            <div style="display:flex;gap:4px;">
+              <button class="mk-toggle active" id="mSoundOn" onclick="menuSound(true);event.stopPropagation()">ON</button>
+              <button class="mk-toggle" id="mSoundOff" onclick="menuSound(false);event.stopPropagation()">OFF</button>
+            </div>
+          </div>
+
+          <div class="sg-nav-item danger" id="navExit" onclick="sgNav('exit',this)">
+            <div class="sg-nav-icon">🚪</div>
+            <span class="sg-nav-label">EXIT GAME</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Start button + loading -->
+      <div>
+        <button class="sg-start" id="startBtn" onclick="startGame()">▶ START DRIVING</button>
+        <div id="loadingMsg"></div>
+        <div id="errorMsg"></div>
+      </div>
     </div>
   </div>
 
@@ -1232,8 +1437,130 @@
   ============================================================ */
   function selectCar(carKey, el){
     selectedCar = carKey;
-    document.querySelectorAll('.mk-car-card').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('.sg-car-opt').forEach(b=>b.classList.remove('selected'));
     el.classList.add('selected');
+    startMenuCarPreview(); // refresh preview
+  }
+
+  function sgNav(section, el){
+    document.querySelectorAll('.sg-nav-item').forEach(i=>i.classList.remove('active'));
+    el.classList.add('active');
+    // Toggle car select sub-panel
+    const cs = document.getElementById('sgCarSelect');
+    if(cs) cs.classList.toggle('visible', section==='race');
+    // Toggle settings sub-panel
+    const ss = document.getElementById('sgSettings');
+    if(ss) ss.style.display = section==='settings' ? 'block' : 'none';
+    // Exit
+    if(section==='exit'){
+      if(confirm('Exit the game?')) window.close();
+    }
+  }
+
+  /* ── MENU: 3D car preview ──
+     Renders the selected car model on the transparent #menuCarCanvas
+     using a dedicated mini Three.js scene that lives only in the menu.    */
+  let menuPreviewScene=null, menuPreviewCam=null, menuPreviewRenderer=null;
+  let menuPreviewMesh=null, menuPreviewRAF=null;
+
+  function startMenuCarPreview(){
+    const canvas = document.getElementById('menuCarCanvas');
+    if(!canvas) return;
+    // Init renderer once
+    if(!menuPreviewRenderer){
+      menuPreviewRenderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+      menuPreviewRenderer.setClearColor(0x000000, 0);
+      menuPreviewRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+      menuPreviewScene = new THREE.Scene();
+      menuPreviewCam = new THREE.PerspectiveCamera(40, canvas.clientWidth/canvas.clientHeight, 0.1, 200);
+      menuPreviewCam.position.set(5.5, 2.2, 7);
+      menuPreviewCam.lookAt(0,0.6,0);
+      // Lights
+      const al = new THREE.AmbientLight(0x7affe0, 0.5);
+      menuPreviewScene.add(al);
+      const dl = new THREE.DirectionalLight(0xfff0cc, 1.4);
+      dl.position.set(8,12,6);
+      menuPreviewScene.add(dl);
+      const dl2 = new THREE.DirectionalLight(0x80ffaa, 0.6);
+      dl2.position.set(-6,4,-4);
+      menuPreviewScene.add(dl2);
+      const rl = new THREE.RectAreaLight ? new THREE.AmbientLight(0x004488,.2) : new THREE.AmbientLight(0x004488,.2);
+      menuPreviewScene.add(rl);
+      // Resize
+      function resizePrev(){
+        const w=canvas.clientWidth, h=canvas.clientHeight;
+        menuPreviewRenderer.setSize(w,h,false);
+        menuPreviewCam.aspect=w/h;
+        menuPreviewCam.updateProjectionMatrix();
+      }
+      resizePrev();
+      window.addEventListener('resize',resizePrev);
+      // Animate
+      function animPrev(){
+        menuPreviewRAF = requestAnimationFrame(animPrev);
+        if(menuPreviewMesh) menuPreviewMesh.rotation.y += 0.005;
+        menuPreviewRenderer.render(menuPreviewScene, menuPreviewCam);
+      }
+      animPrev();
+    }
+    // Load car
+    if(menuPreviewMesh){ menuPreviewScene.remove(menuPreviewMesh); menuPreviewMesh=null; }
+    const loader = new THREE.GLTFLoader();
+    loader.load(MODEL_BASE + MODELS[selectedCar], gltf=>{
+      const m = gltf.scene;
+      const box = new THREE.Box3().setFromObject(m);
+      const sz = box.getSize(new THREE.Vector3());
+      const sc = 3.5/Math.max(sz.x,sz.y,sz.z);
+      m.scale.setScalar(sc);
+      const ctr = box.getCenter(new THREE.Vector3());
+      m.position.sub(ctr.multiplyScalar(sc));
+      const b2 = new THREE.Box3().setFromObject(m);
+      m.position.y = -b2.min.y;
+      menuPreviewMesh = m;
+      menuPreviewScene.add(m);
+    }, null, err=>{ console.warn('Menu preview load failed',err); });
+  }
+
+  /* ── MENU minimap ── draws a static track preview ── */
+  function drawMenuMinimap(){
+    const canvas = document.getElementById('menuMinimapCanvas');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w=canvas.width, h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+    // Draw a stylized oval track
+    ctx.strokeStyle='rgba(122,255,90,.5)';
+    ctx.lineWidth=4;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.ellipse(w/2, h/2, w*0.38, h*0.32, 0, 0, Math.PI*2);
+    ctx.stroke();
+    // Inner edge
+    ctx.strokeStyle='rgba(122,255,90,.15)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.ellipse(w/2, h/2, w*0.28, h*0.22, 0, 0, Math.PI*2);
+    ctx.stroke();
+    // Start line
+    ctx.strokeStyle='rgba(255,255,255,.5)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(w/2, h/2 - h*0.22);
+    ctx.lineTo(w/2, h/2 - h*0.32);
+    ctx.stroke();
+    // Car dot
+    ctx.fillStyle='#7aff5a';
+    ctx.shadowBlur=8;
+    ctx.shadowColor='#7aff5a';
+    ctx.beginPath();
+    ctx.arc(w/2, h/2 - h*0.27, 4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur=0;
+    // Track label
+    ctx.fillStyle='rgba(122,255,90,.4)';
+    ctx.font='bold 8px Orbitron, monospace';
+    ctx.textAlign='center';
+    ctx.fillText('LONDON SHORT', w/2, h-8);
   }
 
   function startGame(){
@@ -1492,6 +1819,7 @@
   }
 
 
+  function showDriftScore(score){
     const el = document.getElementById('driftToast');
     const sc = document.getElementById('driftScore');
     const pts = Math.floor(score);
@@ -1665,6 +1993,9 @@
   initMobileControls();
   initCameraControls();
   requestAnimationFrame(tick);
+  // Menu UI init
+  startMenuCarPreview();
+  drawMenuMinimap();
   </script>
 </body>
 </html>
