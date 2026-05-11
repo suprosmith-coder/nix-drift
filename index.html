@@ -440,31 +440,31 @@
 
     /* Speedometer */
     #speedometer{
-      position:fixed;right:14px;bottom:190px;
+      position:fixed;right:14px;bottom:210px;
       background:rgba(0,0,0,.6);border:1px solid rgba(0,255,136,.16);
       padding:12px 16px;border-radius:16px;backdrop-filter:blur(10px);
       text-align:center;min-width:80px;
     }
-    @media(max-width:768px){#speedometer{bottom:220px;right:12px;}}
+    @media(max-width:900px){#speedometer{bottom:215px;right:12px;}}
     #speedVal{font-size:36px;font-weight:900;color:var(--good);line-height:1;font-family:'Orbitron',monospace;}
     #speedUnit{font-size:8px;letter-spacing:3px;color:rgba(0,255,136,.45);margin-top:2px;font-family:'Orbitron',monospace;}
     #gearIndicator{
-      position:fixed;right:14px;bottom:160px;
+      position:fixed;right:14px;bottom:180px;
       font-size:22px;font-weight:900;color:rgba(255,255,255,.9);
       font-family:'Orbitron',monospace;text-align:center;width:80px;
       text-shadow:0 0 15px rgba(0,255,136,.4);
     }
-    @media(max-width:768px){#gearIndicator{bottom:190px;}}
+    @media(max-width:900px){#gearIndicator{bottom:185px;}}
 
     /* Nitro bar */
     #nitroWrap{
-      position:fixed;right:14px;bottom:136px;
+      position:fixed;right:14px;bottom:156px;
       width:80px;
       background:rgba(0,0,0,.55);border:1px solid rgba(0,200,255,.22);
       border-radius:8px;padding:4px 6px;text-align:center;
       backdrop-filter:blur(8px);
     }
-    @media(max-width:768px){#nitroWrap{bottom:166px;}}
+    @media(max-width:900px){#nitroWrap{bottom:162px;}}
     #nitroLabel{font-size:7px;letter-spacing:2px;color:rgba(0,200,255,.6);margin-bottom:3px;font-family:'Orbitron',monospace;display:flex;align-items:center;justify-content:center;gap:3px;}
     #nitroTrack{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
     #nitroBar{height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,#00c8ff,#00ff88);transition:width .05s;}
@@ -521,12 +521,10 @@
     /* ===================== MOBILE CONTROLS — FR Legends style ===================== */
     #mobileControls{
       position:fixed;bottom:0;left:0;right:0;
-      height:220px;pointer-events:none;
-      display:none; /* hidden by default */
+      height:200px;pointer-events:none;
+      z-index:50;
+      display:none; /* shown by JS on touch devices */
     }
-    /* Only show on touch/mobile screens */
-    @media(max-width:900px) and (pointer:coarse){#mobileControls{display:block;}}
-    @media(max-width:900px){#mobileControls{display:block;}}
 
     /* D-PAD LEFT CLUSTER */
     #dpadCluster{
@@ -663,9 +661,10 @@
     <b>Space</b> Handbrake &nbsp; <b>Shift</b> Nitro &nbsp; <b>ESC</b> Pause
   </div>
   <div id="minimap"><canvas id="minimapCanvas" width="100" height="100"></canvas></div>
+</div>
 
-  <!-- Mobile Controls — FR Legends style clusters -->
-  <div id="mobileControls">
+<!-- Mobile Controls — standalone fixed element, not inside hud -->
+<div id="mobileControls">
     <!-- Left: D-pad steering -->
     <div id="dpadCluster">
       <div id="steerLeft"><i class="fa-solid fa-arrow-left"></i></div>
@@ -690,8 +689,8 @@
           <span class="btn-label" style="font-size:6px;">NOS</span>
         </div>
       </div>
+      </div>
     </div>
-  </div>
 </div>
 
 <!-- ========== PAUSE ========== -->
@@ -882,7 +881,141 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+// Polyfill THREE.GLTFLoader inline — avoids CDN path issues with r128
+// Minimal but functional GLTF/GLB binary loader
+(function(){
+  if(THREE.GLTFLoader) return;
+  THREE.GLTFLoader = class GLTFLoader extends THREE.Loader {
+    constructor(m){super(m);}
+    load(url,onLoad,onProgress,onError){
+      const scope=this;
+      const loader=new THREE.FileLoader(this.manager);
+      loader.setPath(this.path);
+      loader.setResponseType('arraybuffer');
+      loader.setRequestHeader(this.requestHeader);
+      loader.setWithCredentials(this.withCredentials);
+      loader.load(url, data=>{
+        try{ scope.parse(data,url,onLoad,onError); }catch(e){ if(onError)onError(e); else console.error(e); }
+      },onProgress,onError);
+    }
+    parse(data,path,onLoad,onError){
+      let content=''; const extensions={}; const plugins={};
+      if(typeof data === 'string'){ content=data; }
+      else {
+        const magic=THREE.LoaderUtils.decodeText(new Uint8Array(data,0,4));
+        if(magic==='\x67\x6C\x54\x46'){ // GLB
+          const header=new Uint32Array(data,0,3);
+          let chunkIndex=12, json=null, binBuffer=null;
+          while(chunkIndex<header[2]){
+            const chunkLen=new Uint32Array(data,chunkIndex,1)[0];
+            const chunkType=new Uint32Array(data,chunkIndex+4,1)[0];
+            if(chunkType===0x4E4F534A) json=THREE.LoaderUtils.decodeText(new Uint8Array(data,chunkIndex+8,chunkLen));
+            else if(chunkType===0x004E4942) binBuffer=data.slice(chunkIndex+8,chunkIndex+8+chunkLen);
+            chunkIndex+=8+chunkLen;
+          }
+          const gltf=JSON.parse(json);
+          this._parseFull(gltf,path,binBuffer,onLoad,onError);
+        } else {
+          content=THREE.LoaderUtils.decodeText(new Uint8Array(data));
+          const gltf=JSON.parse(content);
+          this._parseFull(gltf,path,null,onLoad,onError);
+        }
+      }
+    }
+    _parseFull(gltf,path,binBuffer,onLoad,onError){
+      const scope=this;
+      const buffers=[];
+      const promises=[];
+      if(gltf.buffers){
+        gltf.buffers.forEach((buf,i)=>{
+          if(i===0&&binBuffer){ buffers[0]=binBuffer; return; }
+          if(buf.uri&&buf.uri.startsWith('data:')){
+            const b64=buf.uri.split(',')[1];
+            const bin=atob(b64); const arr=new Uint8Array(bin.length);
+            for(let j=0;j<bin.length;j++) arr[j]=bin.charCodeAt(j);
+            buffers[i]=arr.buffer;
+          }
+        });
+      }
+      Promise.all(promises).then(()=>{
+        try{ onLoad(scope._buildScene(gltf,buffers,path)); }
+        catch(e){ if(onError)onError(e); else console.error(e); }
+      }).catch(onError||console.error);
+    }
+    _buildScene(gltf,buffers,path){
+      const scene=new THREE.Group();
+      scene.name='GLTFScene';
+      const getBuffer=(view)=>{
+        const bv=gltf.bufferViews[view];
+        return new DataView(buffers[bv.buffer],bv.byteOffset||0,bv.byteLength);
+      };
+      const getAccessorData=(accIdx)=>{
+        if(accIdx===undefined) return null;
+        const acc=gltf.accessors[accIdx];
+        const bv=gltf.bufferViews[acc.bufferView];
+        const byteOffset=(bv.byteOffset||0)+(acc.byteOffset||0);
+        const cmp={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16}[acc.type]||1;
+        switch(acc.componentType){
+          case 5126: return new Float32Array(buffers[bv.buffer],byteOffset,acc.count*cmp);
+          case 5123: return new Uint16Array(buffers[bv.buffer],byteOffset,acc.count*cmp);
+          case 5121: return new Uint8Array(buffers[bv.buffer],byteOffset,acc.count*cmp);
+          case 5125: return new Uint32Array(buffers[bv.buffer],byteOffset,acc.count*cmp);
+          default: return new Float32Array(buffers[bv.buffer],byteOffset,acc.count*cmp);
+        }
+      };
+      const textures=[];
+      if(gltf.images&&gltf.textures){
+        // Skip texture loading for performance — materials get default color
+      }
+      const materials=(gltf.materials||[]).map(m=>{
+        const mat=new THREE.MeshStandardMaterial();
+        if(m.pbrMetallicRoughness){
+          const pbr=m.pbrMetallicRoughness;
+          if(pbr.baseColorFactor){ mat.color.setRGB(pbr.baseColorFactor[0],pbr.baseColorFactor[1],pbr.baseColorFactor[2]); }
+          if(pbr.metallicFactor!==undefined) mat.metalness=pbr.metallicFactor;
+          if(pbr.roughnessFactor!==undefined) mat.roughness=pbr.roughnessFactor;
+        }
+        if(m.emissiveFactor){ mat.emissive.setRGB(m.emissiveFactor[0],m.emissiveFactor[1],m.emissiveFactor[2]); }
+        if(m.doubleSided) mat.side=THREE.DoubleSide;
+        return mat;
+      });
+      const buildNode=(nodeIdx,parent)=>{
+        const node=gltf.nodes[nodeIdx];
+        const obj=new THREE.Group();
+        obj.name=node.name||('node_'+nodeIdx);
+        if(node.matrix){ obj.matrix.fromArray(node.matrix); obj.matrix.decompose(obj.position,obj.quaternion,obj.scale); }
+        else {
+          if(node.translation) obj.position.fromArray(node.translation);
+          if(node.rotation) obj.quaternion.fromArray(node.rotation);
+          if(node.scale) obj.scale.fromArray(node.scale);
+        }
+        if(node.mesh!==undefined){
+          const meshDef=gltf.meshes[node.mesh];
+          meshDef.primitives.forEach(prim=>{
+            const geo=new THREE.BufferGeometry();
+            if(prim.attributes.POSITION!==undefined){ const d=getAccessorData(prim.attributes.POSITION); if(d) geo.setAttribute('position',new THREE.Float32BufferAttribute(d,3)); }
+            if(prim.attributes.NORMAL!==undefined){ const d=getAccessorData(prim.attributes.NORMAL); if(d) geo.setAttribute('normal',new THREE.Float32BufferAttribute(d,3)); }
+            if(prim.attributes.TEXCOORD_0!==undefined){ const d=getAccessorData(prim.attributes.TEXCOORD_0); if(d) geo.setAttribute('uv',new THREE.Float32BufferAttribute(d,2)); }
+            if(prim.indices!==undefined){ const d=getAccessorData(prim.indices); if(d) geo.setIndex(new THREE.BufferAttribute(d,1)); }
+            if(!geo.attributes.normal) geo.computeVertexNormals();
+            const mat=prim.material!==undefined?materials[prim.material]:new THREE.MeshStandardMaterial();
+            const mesh=new THREE.Mesh(geo,mat);
+            mesh.frustumCulled=true;
+            obj.add(mesh);
+          });
+        }
+        parent.add(obj);
+        if(node.children) node.children.forEach(c=>buildNode(c,obj));
+      };
+      const sceneIdx=(gltf.scene!==undefined)?gltf.scene:0;
+      const sceneDef=gltf.scenes?gltf.scenes[sceneIdx]:{nodes:gltf.nodes?gltf.nodes.map((_,i)=>i):[]};
+      (sceneDef.nodes||[]).forEach(n=>buildNode(n,scene));
+      return {scene,animations:[],cameras:[],asset:gltf.asset||{}};
+    }
+  };
+})();
+</script>
 
 <script>
 'use strict';
@@ -949,11 +1082,15 @@ function menuTOD(v){ settings.timeOfDay=v; ['mDay','mNight','mAuto'].forEach(id=
 function menuSound(v){ settings.audioOn=v; document.getElementById('mSoundOn').classList.toggle('active',v); document.getElementById('mSoundOff').classList.toggle('active',!v); }
 function setTimeOfDay(v){ settings.timeOfDay=v; ['ptDay','ptNight','ptAuto'].forEach(id=>document.getElementById(id).classList.remove('active')); document.getElementById({day:'ptDay',night:'ptNight',auto:'ptAuto'}[v]).classList.add('active'); applyTimeOfDay(); }
 function setFog(v){ settings.fogDensity=v; ['pfLight','pfMed','pfHeavy'].forEach(id=>document.getElementById(id).classList.remove('active')); document.getElementById({light:'pfLight',medium:'pfMed',heavy:'pfHeavy'}[v]).classList.add('active'); applyFog(); }
-function setAudio(v){ settings.audioOn=v; document.getElementById('psOn').classList.toggle('active',v); document.getElementById('psOff').classList.toggle('active',!v); if(!v&&engineOsc){ engineGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.1); } }
+function setAudio(v){ settings.audioOn=v; document.getElementById('psOn').classList.toggle('active',v); document.getElementById('psOff').classList.toggle('active',!v); if(engineGain){ if(!v) engineGain.gain.setTargetAtTime(0,audioCtx.currentTime,0.1); } }
 
 /* ================================================================
    GLOBAL STATE
 ================================================================ */
+function isTouchDevice(){
+  return navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+}
+
 let scene, camera, renderer;
 let vehicleMesh = null;
 let gameRunning = false, gamePaused = false;
@@ -1011,14 +1148,27 @@ function bindBtn(id, inputKey) {
   el.addEventListener('mouseup',release);
   el.addEventListener('mouseleave',release);
 }
+
 function initMobileControls() {
+  const mc = document.getElementById('mobileControls');
+  // Show on touch devices OR small screens
+  if(mc && (isTouchDevice() || window.innerWidth <= 900)){
+    mc.style.display = 'block';
+  }
   bindBtn('steerLeft','left');
   bindBtn('steerRight','right');
   bindBtn('gasBtn','fwd');
   bindBtn('brakeBtn','brake');
   bindBtn('nitroBtn','nitro');
   const pb = document.getElementById('pauseBtn');
-  if(pb){ pb.addEventListener('touchend',e=>{e.preventDefault();gamePaused?resumeGame():pauseGame();},{passive:false}); pb.addEventListener('click',()=>{gamePaused?resumeGame():pauseGame();}); }
+  if(pb){
+    pb.addEventListener('touchend',e=>{e.preventDefault();gamePaused?resumeGame():pauseGame();},{passive:false});
+    pb.addEventListener('click',()=>{gamePaused?resumeGame():pauseGame();});
+  }
+  // Also show on resize to mobile
+  window.addEventListener('resize',()=>{
+    if(mc){ mc.style.display=(isTouchDevice()||window.innerWidth<=900)?'block':'none'; }
+  });
 }
 
 /* ================================================================
@@ -1039,6 +1189,8 @@ function backToMenu(){
   document.getElementById('hud').style.display = 'none';
   document.getElementById('overlay').style.display = 'flex';
   resetCarState();
+  // Restart menu preview
+  if(!menuPreviewRAF) startMenuCarPreview();
 }
 function resetCarState(){
   car.speed=0;car.posX=0;car.posY=0;car.posZ=0;car.rotY=0;
@@ -1049,30 +1201,100 @@ function resetCarState(){
 }
 
 /* ================================================================
-   AUDIO
+   AUDIO — Pleasant layered engine sound with filters
 ================================================================ */
 let audioCtx=null, engineOsc=null, engineGain=null, driftOsc=null, driftGain=null;
+let engineFilter=null, engineOsc2=null, engineLFO=null, engineLFOGain=null;
+
 function initAudio(){
   if(audioCtx) return;
   try{
     audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    engineGain = audioCtx.createGain(); engineGain.gain.value=0.04; engineGain.connect(audioCtx.destination);
-    engineOsc = audioCtx.createOscillator(); engineOsc.type='sawtooth'; engineOsc.frequency.value=60; engineOsc.connect(engineGain); engineOsc.start();
-    driftGain = audioCtx.createGain(); driftGain.gain.value=0; driftGain.connect(audioCtx.destination);
-    driftOsc = audioCtx.createOscillator(); driftOsc.type='square'; driftOsc.frequency.value=300; driftOsc.connect(driftGain); driftOsc.start();
+
+    // Master gain — low volume
+    engineGain = audioCtx.createGain();
+    engineGain.gain.value = 0;
+    engineGain.connect(audioCtx.destination);
+
+    // Low-pass filter to tame harshness
+    engineFilter = audioCtx.createBiquadFilter();
+    engineFilter.type = 'lowpass';
+    engineFilter.frequency.value = 600;
+    engineFilter.Q.value = 1.2;
+    engineFilter.connect(engineGain);
+
+    // Primary oscillator — triangle wave (much smoother than sawtooth)
+    engineOsc = audioCtx.createOscillator();
+    engineOsc.type = 'triangle';
+    engineOsc.frequency.value = 55;
+    engineOsc.connect(engineFilter);
+    engineOsc.start();
+
+    // Second oscillator slightly detuned for richness
+    engineOsc2 = audioCtx.createOscillator();
+    engineOsc2.type = 'sine';
+    engineOsc2.frequency.value = 110;
+    const osc2gain = audioCtx.createGain();
+    osc2gain.gain.value = 0.4;
+    engineOsc2.connect(osc2gain);
+    osc2gain.connect(engineFilter);
+    engineOsc2.start();
+
+    // LFO for subtle idle rumble
+    engineLFO = audioCtx.createOscillator();
+    engineLFO.type = 'sine';
+    engineLFO.frequency.value = 8;
+    engineLFOGain = audioCtx.createGain();
+    engineLFOGain.gain.value = 4;
+    engineLFO.connect(engineLFOGain);
+    engineLFOGain.connect(engineFilter.frequency);
+    engineLFO.start();
+
+    // Drift squeal — gentle filtered noise
+    driftGain = audioCtx.createGain();
+    driftGain.gain.value = 0;
+    driftGain.connect(audioCtx.destination);
+    const driftFilter = audioCtx.createBiquadFilter();
+    driftFilter.type = 'bandpass';
+    driftFilter.frequency.value = 900;
+    driftFilter.Q.value = 8;
+    driftFilter.connect(driftGain);
+    driftOsc = audioCtx.createOscillator();
+    driftOsc.type = 'sine';
+    driftOsc.frequency.value = 900;
+    driftOsc.connect(driftFilter);
+    driftOsc.start();
+
   } catch(e){ console.warn('Audio unavailable'); }
 }
+
 function updateAudio(){
-  if(!engineOsc||!settings.audioOn) return;
+  if(!engineOsc||!settings.audioOn||!audioCtx) return;
   const spd = Math.abs(car.speed);
-  engineOsc.frequency.setTargetAtTime(55+spd*280, audioCtx.currentTime, 0.08);
-  const vol = spd>0.005 ? Math.min(0.18+spd*0.4,0.32) : 0.04;
-  engineGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.1);
-  if(car.isDrifting && input.brake){
-    driftOsc.frequency.setTargetAtTime(280+spd*200, audioCtx.currentTime, 0.05);
-    driftGain.gain.setTargetAtTime(0.06, audioCtx.currentTime, 0.05);
+  const maxSpd = car.maxSpeed;
+  const t = Math.min(spd / maxSpd, 1);
+
+  // Pitch: idle ~55Hz → max ~220Hz, smooth curve
+  const targetFreq = 55 + t * t * 165;
+  engineOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.15);
+  engineOsc2.frequency.setTargetAtTime(targetFreq * 2.01, audioCtx.currentTime, 0.15);
+
+  // Filter opens as speed increases
+  engineFilter.frequency.setTargetAtTime(300 + t * 1400, audioCtx.currentTime, 0.12);
+
+  // Volume: quiet at idle, moderate at speed — max 0.12 (not piercing)
+  const vol = spd > 0.005 ? Math.min(0.04 + t * 0.10, 0.14) : 0.025;
+  engineGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.12);
+
+  // LFO rate increases with engine load
+  engineLFO.frequency.setTargetAtTime(6 + t * 14, audioCtx.currentTime, 0.1);
+
+  // Drift squeal
+  if(car.isDrifting && input.brake && spd > 0.12){
+    driftOsc.frequency.setTargetAtTime(800 + spd * 300, audioCtx.currentTime, 0.04);
+    driftGain.gain.setTargetAtTime(0.04, audioCtx.currentTime, 0.04);
   } else {
-    driftGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+    driftGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.12);
   }
 }
 
@@ -1083,12 +1305,15 @@ let sunLight, ambientLight, hemisLight, skyMesh, fogColor;
 let proceduralObjects = [];
 
 function initScene(){
-  renderer = new THREE.WebGLRenderer({ antialias:false });
+  renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
   renderer.setSize(innerWidth, innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  // Cap pixel ratio at 1 on mobile for performance, 1.5 max on desktop
+  const isMob = innerWidth <= 900 || isTouchDevice();
+  renderer.setPixelRatio(isMob ? Math.min(devicePixelRatio,1) : Math.min(devicePixelRatio,1.5));
   renderer.shadowMap.enabled = false;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
+  // Disable auto clear — we control it
   const rc = renderer.domElement;
   rc.style.position = 'fixed';
   rc.style.top='0'; rc.style.left='0';
@@ -1161,9 +1386,49 @@ function makeChunk(){
   addChunkTrees(group); addGuardrails(group); addStreetPoles(group);
   return { group, bend, worldPos:new THREE.Vector3(), worldAngle:0 };
 }
-function addChunkTrees(g){ const xs=[-14,-18,-26,14,18,26]; for(let z=0;z<CHUNK_LEN;z+=18){ xs.forEach(x=>{ const h=3.5+Math.random()*4; const tr=new THREE.Mesh(trunkGeo,trunkMat); tr.position.set(x+(Math.random()-.5)*4,h*.1,-z+(Math.random()-.5)*4); g.add(tr); const cn=new THREE.Mesh(coneGeo,coneMat); cn.scale.y=h/5; cn.position.set(tr.position.x,h*.5+.6,tr.position.z); g.add(cn); }); } }
-function addGuardrails(g){ const rg=new THREE.BoxGeometry(.1,.5,CHUNK_LEN); const rm=new THREE.MeshStandardMaterial({color:0x555577,roughness:.6}); [-7,7].forEach(x=>{ const r=new THREE.Mesh(rg,rm); r.position.set(x,.5,-CHUNK_LEN/2); g.add(r); }); }
-function addStreetPoles(g){ for(let z=15;z<CHUNK_LEN;z+=35){ [-10,10].forEach(x=>{ const p=new THREE.Mesh(poleGeo,poleMat); p.position.set(x,2.5,-z); g.add(p); const lb=new THREE.Mesh(lightBallGeo,glowMat); lb.position.set(x,5.3,-z); g.add(lb); }); } }
+function addChunkTrees(g){
+  // Sparse trees — only 2 sides, every 36 units instead of 18
+  const xs=[-16,16];
+  for(let z=0;z<CHUNK_LEN;z+=36){
+    xs.forEach(x=>{
+      const h=3.5+Math.random()*4;
+      const tr=new THREE.Mesh(trunkGeo,trunkMat);
+      tr.position.set(x+(Math.random()-.5)*3,h*.1,-z+(Math.random()-.5)*3);
+      tr.matrixAutoUpdate=false; tr.updateMatrix();
+      g.add(tr);
+      const cn=new THREE.Mesh(coneGeo,coneMat);
+      cn.scale.y=h/5;
+      cn.position.set(tr.position.x,h*.5+.6,tr.position.z);
+      cn.matrixAutoUpdate=false; cn.updateMatrix();
+      g.add(cn);
+    });
+  }
+}
+function addGuardrails(g){
+  const rg=new THREE.BoxGeometry(.1,.5,CHUNK_LEN);
+  const rm=new THREE.MeshStandardMaterial({color:0x555577,roughness:.6});
+  [-7,7].forEach(x=>{
+    const r=new THREE.Mesh(rg,rm);
+    r.position.set(x,.5,-CHUNK_LEN/2);
+    r.matrixAutoUpdate=false; r.updateMatrix();
+    g.add(r);
+  });
+}
+function addStreetPoles(g){
+  // Every 50 units instead of 35
+  for(let z=15;z<CHUNK_LEN;z+=50){
+    [-10,10].forEach(x=>{
+      const p=new THREE.Mesh(poleGeo,poleMat);
+      p.position.set(x,2.5,-z);
+      p.matrixAutoUpdate=false; p.updateMatrix();
+      g.add(p);
+      const lb=new THREE.Mesh(lightBallGeo,glowMat);
+      lb.position.set(x,5.3,-z);
+      lb.matrixAutoUpdate=false; lb.updateMatrix();
+      g.add(lb);
+    });
+  }
+}
 
 function buildWorld(){
   initMaterials();
@@ -1220,7 +1485,8 @@ function updateRoad(){
 }
 
 function buildTerrain(){
-  const geo=new THREE.PlaneGeometry(1200,1200,20,20);
+  // Reduced segment count for performance (20x20 → 8x8)
+  const geo=new THREE.PlaneGeometry(1200,1200,8,8);
   const pos=geo.attributes.position;
   for(let i=0;i<pos.count;i++){
     const x=pos.getX(i),z=pos.getY(i);
@@ -1229,19 +1495,21 @@ function buildTerrain(){
   geo.computeVertexNormals();
   const t=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x1a3322,roughness:.95}));
   t.rotation.x=-Math.PI/2; t.position.y=-.05;
+  t.matrixAutoUpdate=false; t.updateMatrix();
   proceduralObjects.push(t); scene.add(t);
 }
 function buildMountains(){
-  for(let i=0;i<12;i++){
-    const angle=(i/12)*Math.PI*2, dist=300+Math.random()*150, h=40+Math.random()*60;
-    const m=new THREE.Mesh(new THREE.ConeGeometry(30+Math.random()*25,h,4+Math.floor(Math.random()*3)),new THREE.MeshStandardMaterial({color:0x0d1a2a,roughness:1}));
+  for(let i=0;i<8;i++){  // reduced from 12
+    const angle=(i/8)*Math.PI*2, dist=300+Math.random()*150, h=40+Math.random()*60;
+    const m=new THREE.Mesh(new THREE.ConeGeometry(30+Math.random()*25,h,4),new THREE.MeshStandardMaterial({color:0x0d1a2a,roughness:1}));
     m.position.set(Math.cos(angle)*dist,h/2,Math.sin(angle)*dist);
+    m.matrixAutoUpdate=false; m.updateMatrix();
     proceduralObjects.push(m); scene.add(m);
   }
 }
 function buildStars(){
   const geo=new THREE.BufferGeometry(), arr=[];
-  for(let i=0;i<1200;i++) arr.push((Math.random()-.5)*900,60+Math.random()*200,(Math.random()-.5)*900);
+  for(let i=0;i<600;i++) arr.push((Math.random()-.5)*900,60+Math.random()*200,(Math.random()-.5)*900);  // reduced from 1200
   geo.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));
   const s=new THREE.Points(geo,new THREE.PointsMaterial({color:0xffffff,size:.7,sizeAttenuation:true}));
   proceduralObjects.push(s); scene.add(s);
@@ -1577,18 +1845,21 @@ function drawMinimap(){
 }
 
 /* ================================================================
-   HUD UPDATE
+   HUD UPDATE — cached DOM refs for performance
 ================================================================ */
 let hudTimer=0;
+let _elTimeChip, _elSpeedVal, _elGearInd;
+function getHUDEls(){ _elTimeChip=document.getElementById('timeChip'); _elSpeedVal=document.getElementById('speedVal'); _elGearInd=document.getElementById('gearIndicator'); }
 function updateHUD(dt){
   gameTime+=dt; hudTimer++;
-  if(hudTimer%5!==0) return;
+  if(hudTimer%4!==0) return; // update every 4 frames
+  if(!_elSpeedVal) getHUDEls();
   const m=Math.floor(gameTime/60),s=Math.floor(gameTime%60);
-  document.getElementById('timeChip').innerHTML=`<i class="fa-regular fa-clock"></i> ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if(_elTimeChip) _elTimeChip.innerHTML=`<i class="fa-regular fa-clock"></i> ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   const kph=Math.round(Math.abs(car.speed)*KPH_SCALE);
-  document.getElementById('speedVal').textContent=kph;
+  if(_elSpeedVal) _elSpeedVal.textContent=kph;
   const g=kph<40?'1':kph<90?'2':kph<140?'3':kph<200?'4':kph<270?'5':'6';
-  document.getElementById('gearIndicator').textContent=car.speed<-0.01?'R':(kph<5?'N':g);
+  if(_elGearInd) _elGearInd.textContent=car.speed<-0.01?'R':(kph<5?'N':g);
 }
 
 /* ================================================================
@@ -1649,9 +1920,12 @@ function startMenuCarPreview(){
     resizePrev();
     window.addEventListener('resize',resizePrev);
 
-    // Cinematic slow orbit animation
-    function animPrev(){
+    // Cinematic slow orbit animation — throttled to ~30fps
+    let _prevLastTime=0;
+    function animPrev(ts){
       menuPreviewRAF=requestAnimationFrame(animPrev);
+      if(ts-_prevLastTime < 33) return; // ~30fps cap
+      _prevLastTime=ts;
       menuCamAngle+=0.004; // slow cinematic orbit
       const camR=9;
       menuPreviewCam.position.set(
@@ -1662,7 +1936,7 @@ function startMenuCarPreview(){
       menuPreviewCam.lookAt(0,0.8,0);
       menuPreviewRenderer.render(menuPreviewScene,menuPreviewCam);
     }
-    animPrev();
+    animPrev(0);
   }
   // Load car model
   if(menuPreviewMesh){ menuPreviewScene.remove(menuPreviewMesh); menuPreviewMesh=null; }
@@ -1772,6 +2046,8 @@ function startGame(){
       vehicleMesh.position.set(car.posX,car.posY,car.posZ);
       document.getElementById('overlay').style.display='none';
       document.getElementById('hud').style.display='block';
+      // Stop menu preview to free GPU for game
+      if(menuPreviewRAF){ cancelAnimationFrame(menuPreviewRAF); menuPreviewRAF=null; }
       document.getElementById('carChip').innerHTML=`<i class="fa-solid fa-car"></i> ${CAR_NAMES[selectedCar]}`;
       document.getElementById('loadingMsg').textContent='';
       document.getElementById('startBtn').disabled=false;
@@ -1791,23 +2067,32 @@ function startGame(){
 }
 
 /* ================================================================
-   GAME LOOP
+   GAME LOOP — performance optimized
 ================================================================ */
 let lastTime=performance.now();
+let frameCount=0;
 function tick(ts){
   requestAnimationFrame(tick);
-  const dt=Math.min((ts-lastTime)/1000,.05);
+  const rawDt=(ts-lastTime)/1000;
   lastTime=ts;
+  // Hard cap dt to prevent spiral of death on tab switch / lag spike
+  const dt=Math.min(rawDt, 0.033); // max 33ms = min 30fps physics
+
+  frameCount++;
 
   if(gameRunning&&!gamePaused){
     updateVehicle(dt);
     updateRoad();
     updateCamera();
     updateHUD(dt);
-    updateDayNight(dt);
+    // Day/night only needs update every 3 frames
+    if(frameCount%3===0) updateDayNight(dt*3);
     updateAudio();
-    drawSpeedLines(Math.abs(car.speed));
-    if(hudTimer%3===0) drawMinimap();
+    // Speed lines only at speed
+    if(Math.abs(car.speed)>0.05) drawSpeedLines(Math.abs(car.speed));
+    else speedCtx.clearRect(0,0,speedCanvas.width,speedCanvas.height);
+    // Minimap every 6 frames
+    if(frameCount%6===0) drawMinimap();
   }
   renderer.render(scene,camera);
 }
