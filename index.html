@@ -123,106 +123,102 @@
       to{transform:translateY(-100vh) translateX(30px);opacity:0;}
     }
 
-    /* Car showcase area */
+    /* Car showcase area — FR Legends style: large right side */
     #menuCarCanvas{
-      position:absolute;right:-3%;bottom:0;
-      width:72%;height:88%;
+      position:absolute;right:-2%;bottom:0;
+      width:68%;height:92%;
       z-index:3;pointer-events:none;
     }
     #menuCarGlow{
-      position:absolute;right:8%;bottom:8%;
-      width:52%;height:20%;
-      background:radial-gradient(ellipse,rgba(70,180,100,.22) 0%,transparent 70%);
-      z-index:2;filter:blur(8px);
+      position:absolute;right:10%;bottom:6%;
+      width:50%;height:18%;
+      background:radial-gradient(ellipse,rgba(70,180,100,.28) 0%,transparent 70%);
+      z-index:2;filter:blur(10px);
       animation:glowPulse 2.8s ease-in-out infinite;
     }
     @keyframes glowPulse{0%,100%{opacity:.6;transform:scaleX(.95);}50%{opacity:1;transform:scaleX(1.05);}}
 
     /* Ground line under car */
     #menuGroundLine{
-      position:absolute;right:5%;bottom:16.5%;
-      width:60%;height:1px;
-      background:linear-gradient(90deg,transparent 0%,rgba(122,255,90,.35) 30%,rgba(0,200,255,.3) 70%,transparent 100%);
+      position:absolute;right:5%;bottom:14%;
+      width:58%;height:1px;
+      background:linear-gradient(90deg,transparent 0%,rgba(122,255,90,.45) 30%,rgba(0,200,255,.35) 70%,transparent 100%);
       z-index:4;
     }
 
-    /* ── TOP RIGHT: Player chip + minimap ── */
-    #menuTopRight{
-      position:absolute;right:20px;top:16px;
-      display:flex;flex-direction:column;gap:10px;align-items:flex-end;
+    /* ── FR LEGENDS: TOP BAR ── */
+    #frTopBar{
+      position:absolute;top:0;left:0;right:0;
+      height:58px;z-index:10;
+      background:rgba(0,0,0,.78);
+      border-bottom:1px solid rgba(122,255,90,.18);
+      backdrop-filter:blur(10px);
+      display:flex;align-items:center;
+      padding:0 20px;gap:0;
+    }
+    #frPlayerInfo{
+      display:flex;align-items:center;gap:10px;
+      flex:0 0 auto;min-width:230px;
+    }
+    .fr-avatar{
+      width:36px;height:36px;border-radius:8px;
+      background:linear-gradient(135deg,rgba(122,255,90,.25),rgba(0,200,255,.2));
+      border:1px solid rgba(122,255,90,.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:16px;color:rgba(122,255,90,.9);flex-shrink:0;
+    }
+    .fr-player-details{display:flex;flex-direction:column;gap:1px;}
+    .fr-player-name{font-family:'Orbitron',monospace;font-size:12px;font-weight:900;color:#fff;letter-spacing:2px;}
+    .fr-player-level{font-size:9px;color:rgba(122,255,90,.55);letter-spacing:1px;}
+    .fr-xp-block{display:flex;flex-direction:column;gap:3px;min-width:110px;}
+    .fr-xp-label{font-size:8px;color:rgba(255,255,255,.3);font-family:'Orbitron',monospace;letter-spacing:1px;}
+    .fr-xp-bar{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
+    .fr-xp-fill{height:100%;width:69%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:2px;}
+    .fr-coins{font-size:10px;color:var(--gold);display:flex;align-items:center;gap:5px;font-family:'Orbitron',monospace;white-space:nowrap;}
+    #frBrand{
+      flex:1;text-align:center;
+      font-family:'Orbitron',monospace;
+      user-select:none;
+    }
+    #frBrand .sg-logo-line1{font-size:clamp(14px,2.2vw,22px);color:#fff;letter-spacing:4px;font-weight:900;text-shadow:0 0 30px rgba(122,255,90,.4);display:block;}
+    .fr-racing-text{font-size:clamp(8px,1.1vw,11px);color:#ff3838;letter-spacing:8px;font-weight:700;margin-top:-3px;}
+    #frNews{
+      flex:0 0 auto;min-width:180px;text-align:right;
+    }
+    .fr-news-tag{font-size:8px;color:rgba(122,255,90,.65);letter-spacing:3px;font-family:'Orbitron',monospace;}
+    .fr-news-text{font-size:9px;color:#fff;font-weight:700;letter-spacing:1px;margin-top:2px;font-family:'Orbitron',monospace;}
+
+    /* ── FR LEGENDS: 3D MAP PREVIEW (bottom left, above social) ── */
+    #frMapPreview{
+      position:absolute;left:20px;bottom:52px;
       z-index:10;
+      background:rgba(0,0,0,.75);
+      border:1px solid rgba(122,255,90,.22);
+      border-radius:12px;overflow:hidden;
+      backdrop-filter:blur(6px);
+      width:260px;
     }
-    #menuPlayerChip{
-      background:rgba(0,0,0,.72);
-      border:1px solid rgba(255,255,255,.1);
-      border-radius:12px;padding:10px 16px;
-      backdrop-filter:blur(8px);
-      display:flex;flex-direction:column;gap:4px;min-width:180px;
+    .fr-map-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:8px 12px 5px;
     }
-    .pc-header{display:flex;align-items:center;gap:8px;}
-    .pc-avatar{
-      width:28px;height:28px;border-radius:6px;
-      background:linear-gradient(135deg,rgba(122,255,90,.2),rgba(0,200,255,.2));
-      border:1px solid rgba(122,255,90,.3);
-      display:flex;align-items:center;justify-content:center;
-      font-size:12px;color:rgba(122,255,90,.8);
+    .fr-map-title{font-family:'Orbitron',monospace;font-size:8px;color:#fff;letter-spacing:2px;font-weight:700;}
+    .fr-map-badge{
+      font-size:7px;letter-spacing:2px;color:var(--accent);
+      border:1px solid rgba(122,255,90,.35);border-radius:4px;padding:2px 6px;
+      font-family:'Orbitron',monospace;
     }
-    .pc-name{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:#fff;letter-spacing:2px;}
-    .pc-level{font-size:9px;color:rgba(255,255,255,.35);letter-spacing:1px;}
-    .pc-xpbar{height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:2px;overflow:hidden;}
-    .pc-xpfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:2px;width:69%;}
-    .pc-coins{font-size:9px;color:var(--gold);display:flex;align-items:center;gap:4px;margin-top:2px;}
-
-    #menuMinimap{
-      background:rgba(0,0,0,.65);
-      border:1px solid rgba(80,220,140,.18);
-      border-radius:10px;overflow:hidden;
-      backdrop-filter:blur(4px);
-      position:relative;
+    #menuMinimapCanvas{width:100% !important;height:160px;display:block;}
+    .fr-map-footer{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:6px 12px;background:rgba(0,0,0,.4);
+      font-size:8px;color:rgba(255,255,255,.4);font-family:'Orbitron',monospace;letter-spacing:1px;
     }
-    #menuMinimapCanvas{width:170px;height:120px;display:block;}
-    .mm-label{
-      position:absolute;top:5px;left:8px;
-      font-family:'Orbitron',monospace;font-size:6px;
-      color:rgba(80,220,140,.5);letter-spacing:2px;
-    }
-
-    /* ── BOTTOM RIGHT: News ── */
-    #menuNews{
-      position:absolute;right:20px;bottom:24px;
-      width:190px;z-index:10;
-    }
-    .news-label{
-      font-family:'Orbitron',monospace;font-size:7px;
-      color:rgba(80,220,140,.65);letter-spacing:2px;margin-bottom:5px;
-      display:flex;align-items:center;gap:5px;
-    }
-    .news-label i{font-size:8px;}
-    .news-card{
-      background:rgba(0,0,0,.75);border:1px solid rgba(80,220,140,.12);
-      border-radius:10px;overflow:hidden;backdrop-filter:blur(5px);
-    }
-    .news-img{
-      width:100%;height:60px;
-      background:linear-gradient(135deg,#0a1020,#1a2035);
-      position:relative;overflow:hidden;
-      display:flex;align-items:center;justify-content:center;
-    }
-    .news-img-icon{font-size:22px;color:rgba(255,255,255,.25);z-index:1;}
-    .news-img::before{
-      content:'';position:absolute;inset:0;
-      background:radial-gradient(circle at 60% 50%,rgba(122,255,90,.08) 0%,transparent 60%);
-    }
-    .news-text{padding:8px 10px;}
-    .news-hl{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:#fff;letter-spacing:.5px;line-height:1.4;}
-    .news-sub{font-size:8px;color:rgba(80,220,140,.55);margin-top:3px;}
-    .news-dots{display:flex;gap:4px;margin-top:7px;justify-content:center;padding-bottom:6px;}
-    .news-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.12);}
-    .news-dot.active{background:rgba(80,220,140,.7);}
+    .fr-map-laps{color:var(--accent);}
 
     /* ── BOTTOM LEFT: Social ── */
     #menuSocial{
-      position:absolute;left:0;bottom:20px;
+      position:absolute;left:0;bottom:0;
       display:flex;gap:0;align-items:center;z-index:10;
       padding-left:26px;
     }
@@ -238,8 +234,8 @@
     /* ── LEFT SIDEBAR ── */
     #menuSidebar{
       position:relative;z-index:10;
-      width:min(290px,54vw);
-      padding:26px 0 24px 26px;
+      width:min(280px,52vw);
+      padding:74px 0 20px 20px;
       display:flex;flex-direction:column;
       justify-content:space-between;
       flex-shrink:0;
@@ -522,92 +518,107 @@
     @media(max-width:768px){#minimap{display:none;}}
     #minimapCanvas{width:100%;height:100%;}
 
-    /* ===================== MOBILE CONTROLS ===================== */
+    /* ===================== MOBILE CONTROLS — FR Legends style ===================== */
     #mobileControls{
       position:fixed;bottom:0;left:0;right:0;
-      height:200px;pointer-events:none;
-      display:none;
+      height:220px;pointer-events:none;
+      display:none; /* hidden by default */
     }
+    /* Only show on touch/mobile screens */
+    @media(max-width:900px) and (pointer:coarse){#mobileControls{display:block;}}
     @media(max-width:900px){#mobileControls{display:block;}}
 
-    /* Steering zone — left side */
-    #steerLeft,#steerRight{
-      position:absolute;bottom:20px;
-      width:80px;height:80px;
-      background:rgba(0,0,0,.45);
-      border:2px solid rgba(255,255,255,.12);
-      border-radius:16px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:22px;color:rgba(255,255,255,.45);
-      pointer-events:auto;touch-action:none;
-      transition:background .1s, border-color .1s, transform .1s;
-      backdrop-filter:blur(4px);
+    /* D-PAD LEFT CLUSTER */
+    #dpadCluster{
+      position:absolute;bottom:18px;left:16px;
+      display:grid;
+      grid-template-columns:64px 64px;
+      grid-template-rows:64px;
+      gap:8px;
+      pointer-events:auto;
     }
-    #steerLeft{left:20px;}
-    #steerRight{left:110px;}
+    #steerLeft,#steerRight{
+      width:64px;height:64px;
+      background:rgba(0,0,0,.55);
+      border:2px solid rgba(255,255,255,.14);
+      border-radius:18px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:24px;color:rgba(255,255,255,.5);
+      pointer-events:auto;touch-action:none;
+      transition:background .08s, border-color .08s, transform .08s;
+      backdrop-filter:blur(6px);
+      box-shadow:0 4px 16px rgba(0,0,0,.4);
+    }
     #steerLeft.pressed,#steerRight.pressed{
-      background:rgba(122,255,90,.15);
-      border-color:rgba(122,255,90,.5);
+      background:rgba(122,255,90,.18);
+      border-color:rgba(122,255,90,.6);
       color:var(--accent);
-      transform:scale(.94);
+      transform:scale(.92);
+      box-shadow:0 0 20px rgba(122,255,90,.25);
     }
 
-    /* Gas/Brake right side */
+    /* RIGHT ACTION CLUSTER */
+    #actionCluster{
+      position:absolute;bottom:18px;right:16px;
+      display:flex;flex-direction:column;gap:8px;align-items:flex-end;
+      pointer-events:auto;
+    }
+    #topActionRow{
+      display:flex;gap:8px;align-items:center;
+    }
     #gasBtn,#brakeBtn{
-      position:absolute;bottom:20px;right:20px;
-      width:80px;height:80px;
+      width:72px;height:72px;
       border-radius:50%;
       display:flex;align-items:center;justify-content:center;
-      flex-direction:column;
-      gap:3px;font-size:18px;
+      flex-direction:column;gap:3px;
+      font-size:22px;
       pointer-events:auto;touch-action:none;
-      transition:all .1s;
-      backdrop-filter:blur(4px);
+      transition:all .08s;
+      backdrop-filter:blur(6px);
+      box-shadow:0 4px 16px rgba(0,0,0,.4);
     }
     #gasBtn{
-      background:rgba(0,200,100,.15);
-      border:2px solid rgba(0,200,100,.35);
-      color:rgba(0,255,136,.8);
-      bottom:20px;right:110px;
+      background:rgba(0,180,80,.18);
+      border:2px solid rgba(0,220,100,.38);
+      color:rgba(0,255,136,.9);
     }
     #brakeBtn{
-      background:rgba(255,80,80,.12);
-      border:2px solid rgba(255,80,80,.3);
-      color:rgba(255,100,100,.8);
-      bottom:20px;right:20px;
+      background:rgba(255,60,60,.14);
+      border:2px solid rgba(255,80,80,.32);
+      color:rgba(255,100,100,.9);
     }
-    #gasBtn.pressed{background:rgba(0,200,100,.3);border-color:rgba(0,255,136,.6);transform:scale(.94);}
-    #brakeBtn.pressed{background:rgba(255,80,80,.28);border-color:rgba(255,100,100,.55);transform:scale(.94);}
+    #gasBtn.pressed{background:rgba(0,200,100,.32);border-color:rgba(0,255,136,.7);transform:scale(.92);box-shadow:0 0 22px rgba(0,255,136,.3);}
+    #brakeBtn.pressed{background:rgba(255,60,60,.3);border-color:rgba(255,100,100,.65);transform:scale(.92);box-shadow:0 0 22px rgba(255,60,60,.3);}
     .btn-label{font-size:7px;letter-spacing:1px;font-family:'Orbitron',monospace;}
 
-    /* Nitro button */
+    /* NITRO + PAUSE row */
+    #bottomActionRow{
+      display:flex;gap:8px;align-items:center;
+    }
     #nitroBtn{
-      position:absolute;bottom:120px;right:20px;
-      width:58px;height:58px;
+      width:56px;height:56px;
       border-radius:14px;
-      background:rgba(0,150,255,.12);
-      border:2px solid rgba(0,180,255,.3);
-      color:rgba(0,200,255,.8);
-      font-size:16px;
+      background:rgba(0,140,255,.15);
+      border:2px solid rgba(0,180,255,.35);
+      color:rgba(0,210,255,.9);
+      font-size:18px;
       display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;
       pointer-events:auto;touch-action:none;
-      transition:all .1s;backdrop-filter:blur(4px);
+      transition:all .08s;backdrop-filter:blur(6px);
+      box-shadow:0 4px 16px rgba(0,0,0,.4);
     }
-    #nitroBtn.pressed{background:rgba(0,150,255,.3);border-color:rgba(0,200,255,.7);transform:scale(.94);}
-
-    /* Pause btn mobile */
+    #nitroBtn.pressed{background:rgba(0,140,255,.32);border-color:rgba(0,210,255,.75);transform:scale(.92);box-shadow:0 0 22px rgba(0,180,255,.3);}
     #pauseBtn{
-      position:absolute;bottom:120px;right:90px;
-      width:42px;height:42px;
-      border-radius:10px;
+      width:44px;height:44px;
+      border-radius:12px;
       background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.1);
-      color:rgba(255,255,255,.55);font-size:14px;
+      border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.6);font-size:16px;
       display:flex;align-items:center;justify-content:center;
       pointer-events:auto;touch-action:none;
-      transition:all .1s;
+      transition:all .08s;
     }
-    #pauseBtn:active{background:rgba(255,255,255,.15);}
+    #pauseBtn:active{background:rgba(255,255,255,.18);}
 
     /* Speed lines canvas */
     #speedCanvas{
@@ -653,23 +664,33 @@
   </div>
   <div id="minimap"><canvas id="minimapCanvas" width="100" height="100"></canvas></div>
 
-  <!-- Mobile Controls -->
+  <!-- Mobile Controls — FR Legends style clusters -->
   <div id="mobileControls">
-    <div id="steerLeft"><i class="fa-solid fa-arrow-left"></i></div>
-    <div id="steerRight"><i class="fa-solid fa-arrow-right"></i></div>
-    <div id="gasBtn">
-      <i class="fa-solid fa-chevron-up"></i>
-      <span class="btn-label">GAS</span>
+    <!-- Left: D-pad steering -->
+    <div id="dpadCluster">
+      <div id="steerLeft"><i class="fa-solid fa-arrow-left"></i></div>
+      <div id="steerRight"><i class="fa-solid fa-arrow-right"></i></div>
     </div>
-    <div id="brakeBtn">
-      <i class="fa-solid fa-hand-back-fist"></i>
-      <span class="btn-label">DRIFT</span>
+    <!-- Right: Action buttons -->
+    <div id="actionCluster">
+      <div id="topActionRow">
+        <div id="gasBtn">
+          <i class="fa-solid fa-chevron-up"></i>
+          <span class="btn-label">GAS</span>
+        </div>
+        <div id="brakeBtn">
+          <i class="fa-solid fa-hand-back-fist"></i>
+          <span class="btn-label">DRIFT</span>
+        </div>
+      </div>
+      <div id="bottomActionRow">
+        <div id="pauseBtn"><i class="fa-solid fa-pause"></i></div>
+        <div id="nitroBtn">
+          <i class="fa-solid fa-bolt"></i>
+          <span class="btn-label" style="font-size:6px;">NOS</span>
+        </div>
+      </div>
     </div>
-    <div id="nitroBtn">
-      <i class="fa-solid fa-bolt"></i>
-      <span class="btn-label" style="font-size:6px;">NOS</span>
-    </div>
-    <div id="pauseBtn"><i class="fa-solid fa-pause"></i></div>
   </div>
 </div>
 
@@ -724,51 +745,45 @@
   <div id="menuRoad"></div>
   <div id="menuRoadReflect"></div>
 
-  <!-- Car glow halo -->
+  <!-- FR LEGENDS LAYOUT: Car fills right side -->
   <div id="menuCarGlow"></div>
   <div id="menuGroundLine"></div>
-
-  <!-- 3D Car canvas -->
   <canvas id="menuCarCanvas"></canvas>
 
-  <!-- TOP RIGHT: Player info + Minimap -->
-  <div id="menuTopRight">
-    <div id="menuPlayerChip">
-      <div class="pc-header">
-        <div class="pc-avatar"><i class="fa-solid fa-user-astronaut"></i></div>
-        <div>
-          <div class="pc-name"><i class="fa-solid fa-skull-crossbones" style="font-size:9px;margin-right:4px;"></i>STINKER</div>
-          <div class="pc-level">LEVEL 25</div>
-        </div>
-        <div style="margin-left:auto;text-align:right;">
-          <div style="font-size:8px;color:rgba(255,255,255,.25);font-family:'Orbitron',monospace;">12,450 / 18,000 XP</div>
-        </div>
+  <!-- FR LEGENDS: TOP BAR — player info stretches full width -->
+  <div id="frTopBar">
+    <div id="frPlayerInfo">
+      <div class="fr-avatar"><i class="fa-solid fa-skull-crossbones"></i></div>
+      <div class="fr-player-details">
+        <div class="fr-player-name">STINKER</div>
+        <div class="fr-player-level">LVL 25</div>
       </div>
-      <div class="pc-xpbar"><div class="pc-xpfill"></div></div>
-      <div class="pc-coins"><i class="fa-solid fa-circle-dollar-to-slot"></i> 56,420</div>
+      <div class="fr-xp-block">
+        <div class="fr-xp-label">12,450 / 18,000 XP</div>
+        <div class="fr-xp-bar"><div class="fr-xp-fill"></div></div>
+      </div>
+      <div class="fr-coins"><i class="fa-solid fa-coins"></i> 56,420</div>
     </div>
-    <div id="menuMinimap">
-      <div class="mm-label">TRACK MAP</div>
-      <canvas id="menuMinimapCanvas" width="170" height="120"></canvas>
+    <div id="frBrand">
+      <div class="sg-logo-line1">STINKER <span class="sg-logo-accent">GAMES</span></div>
+      <div class="fr-racing-text">RACING</div>
+    </div>
+    <div id="frNews">
+      <div class="fr-news-tag">UPDATE 1.2</div>
+      <div class="fr-news-text">NEW TRACKS. NEW RIVALS.</div>
     </div>
   </div>
 
-  <!-- BOTTOM RIGHT: News card -->
-  <div id="menuNews">
-    <div class="news-label"><i class="fa-solid fa-newspaper"></i> LATEST NEWS</div>
-    <div class="news-card">
-      <div class="news-img">
-        <i class="fa-solid fa-flag-checkered news-img-icon"></i>
-      </div>
-      <div class="news-text">
-        <div class="news-hl">NEW TRACKS. NEW RIVALS.</div>
-        <div class="news-sub">UPDATE 1.2 IS OUT NOW!</div>
-      </div>
-      <div class="news-dots">
-        <div class="news-dot active"></div>
-        <div class="news-dot"></div>
-        <div class="news-dot"></div>
-      </div>
+  <!-- FR LEGENDS: 3D MAP PREVIEW (bottom left) -->
+  <div id="frMapPreview">
+    <div class="fr-map-header">
+      <span class="fr-map-title">HIGHWAY INTERCHANGE</span>
+      <span class="fr-map-badge">SELECTED</span>
+    </div>
+    <canvas id="menuMinimapCanvas" width="260" height="160"></canvas>
+    <div class="fr-map-footer">
+      <span><i class="fa-solid fa-road"></i> OVERPASS CIRCUIT</span>
+      <span class="fr-map-laps">3 LAPS</span>
     </div>
   </div>
 
@@ -781,24 +796,17 @@
     <div class="soc-tagline">THANKS FOR PLAYING!</div>
   </div>
 
-  <!-- LEFT SIDEBAR -->
+  <!-- FR LEGENDS LEFT SIDEBAR -->
   <div id="menuSidebar">
     <div>
-      <!-- Logo -->
-      <div class="sg-logo">
-        <span class="sg-logo-line1">STINKER<span class="sg-logo-accent"> GAMES</span></span>
-        <span class="sg-logo-line2">RACING</span>
-        <span class="sg-logo-badge">EDITION 2025</span>
-      </div>
-
-      <!-- Nav -->
+      <!-- FR Legends style nav tabs -->
       <div class="sg-nav">
         <div class="sg-nav-item active" id="navRace" onclick="sgNav('race',this)">
           <div class="sg-nav-icon"><i class="fa-solid fa-flag-checkered"></i></div>
           <span class="sg-nav-label">RACE</span>
         </div>
 
-        <!-- Car select sub-menu -->
+        <!-- Car select sub-menu — FR Legends style cards -->
         <div id="sgCarSelect" class="visible">
           <div class="sg-car-opt selected" id="sco-camaro" onclick="selectCar('camaro',this)">
             <span class="sg-car-icon2"><i class="fa-solid fa-car-side"></i></span>
@@ -812,6 +820,13 @@
             <div>
               <div class="sg-car-name2">HELLCAT DAYTONA</div>
               <div class="sg-car-hp">717 HP · 2020</div>
+            </div>
+          </div>
+          <div class="sg-car-opt" id="sco-supra" onclick="selectCar('supra',this)">
+            <span class="sg-car-icon2"><i class="fa-solid fa-gauge-high"></i></span>
+            <div>
+              <div class="sg-car-name2">TOYOTA SUPRA</div>
+              <div class="sg-car-hp">382 HP · MK5</div>
             </div>
           </div>
         </div>
@@ -858,7 +873,7 @@
     <!-- Start button + status -->
     <div>
       <button class="sg-start" id="startBtn" onclick="startGame()">
-        <i class="fa-solid fa-play"></i> START DRIVING
+        <i class="fa-solid fa-flag-checkered"></i> RACE NOW
       </button>
       <div id="loadingMsg"></div>
       <div id="errorMsg"></div>
@@ -875,13 +890,14 @@
    CONFIG
 ================================================================ */
 const MODEL_BASE = 'https://suprosmith-coder.github.io/nix-drift/models/';
-const MODELS = { camaro:'2019_chevrolet_camaro_zl1.glb', hellcat:'2020_dodge_charger_srt_hellcat_daytona_50th.glb' };
-const MAP_MODEL = 'penny_racers_ps2_-_western_canyon_long.glb';
+const MODELS = { camaro:'2019_chevrolet_camaro_zl1.glb', hellcat:'2020_dodge_charger_srt_hellcat_daytona_50th.glb', supra:'toyota_supra.glb' };
+const MAP_MODEL = 'highway_lnterchange_overpass.glb';
 const KPH_SCALE = 520;
-const CAR_NAMES = { camaro:'Camaro ZL1', hellcat:'Hellcat Daytona' };
+const CAR_NAMES = { camaro:'Camaro ZL1', hellcat:'Hellcat Daytona', supra:'Toyota Supra' };
 const CAR_STATS = {
   camaro:  { maxSpeed:0.62, accel:0.032, friction:0.934, turnSpeed:0.066 },
-  hellcat: { maxSpeed:0.68, accel:0.034, friction:0.928, turnSpeed:0.050 }
+  hellcat: { maxSpeed:0.68, accel:0.034, friction:0.928, turnSpeed:0.050 },
+  supra:   { maxSpeed:0.72, accel:0.038, friction:0.940, turnSpeed:0.072 }
 };
 
 /* ================================================================
@@ -1582,6 +1598,8 @@ function selectCar(carKey,el){
   selectedCar=carKey;
   document.querySelectorAll('.sg-car-opt').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
+  // Update car canvas label
+  const names={camaro:'CAMARO ZL1',hellcat:'HELLCAT DAYTONA',supra:'TOYOTA SUPRA'};
   startMenuCarPreview();
 }
 function sgNav(section,el){
@@ -1668,7 +1686,7 @@ function startMenuCarPreview(){
 }
 
 /* ================================================================
-   MENU MINIMAP — stylized track preview
+   MENU MINIMAP — Highway Interchange stylized preview
 ================================================================ */
 function drawMenuMinimap(){
   const canvas=document.getElementById('menuMinimapCanvas');
@@ -1676,29 +1694,58 @@ function drawMenuMinimap(){
   const ctx=canvas.getContext('2d');
   const w=canvas.width,h=canvas.height;
   ctx.clearRect(0,0,w,h);
-  // Track outline (stylized layout)
-  ctx.strokeStyle='rgba(122,255,90,.45)';
-  ctx.lineWidth=5; ctx.lineCap='round'; ctx.lineJoin='round';
-  ctx.shadowBlur=6; ctx.shadowColor='rgba(122,255,90,.4)';
-  ctx.beginPath();
-  ctx.ellipse(w/2,h/2,w*.38,h*.3,0,0,Math.PI*2);
-  ctx.stroke();
-  // Inner
-  ctx.strokeStyle='rgba(122,255,90,.12)';
-  ctx.lineWidth=2; ctx.shadowBlur=0;
-  ctx.beginPath();
-  ctx.ellipse(w/2,h/2,w*.26,h*.2,0,0,Math.PI*2);
-  ctx.stroke();
-  // Start line
-  ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(w/2,h/2-h*.2); ctx.lineTo(w/2,h/2-h*.3); ctx.stroke();
-  // Car dot with glow
-  ctx.fillStyle='#7aff5a'; ctx.shadowBlur=10; ctx.shadowColor='#7aff5a';
-  ctx.beginPath(); ctx.arc(w/2,h/2-h*.25,4,0,Math.PI*2); ctx.fill();
+
+  // Background
+  ctx.fillStyle='rgba(5,10,20,.8)';
+  ctx.fillRect(0,0,w,h);
+
+  const glow='rgba(122,255,90,.5)';
+  const road='rgba(122,255,90,.35)';
+  const faded='rgba(122,255,90,.12)';
+  ctx.lineCap='round';ctx.lineJoin='round';
+
+  // Main highway — horizontal
+  ctx.strokeStyle=road; ctx.lineWidth=7; ctx.shadowBlur=8; ctx.shadowColor=glow;
+  ctx.beginPath(); ctx.moveTo(10,h/2); ctx.lineTo(w-10,h/2); ctx.stroke();
+
+  // Overpass road — vertical (crosses over)
+  ctx.strokeStyle='rgba(0,200,255,.4)'; ctx.lineWidth=7; ctx.shadowColor='rgba(0,200,255,.5)';
+  ctx.beginPath(); ctx.moveTo(w*.45,10); ctx.lineTo(w*.45,h-10); ctx.stroke();
+
+  // On-ramps (diagonal connectors)
+  ctx.strokeStyle=road; ctx.lineWidth=4; ctx.shadowColor=glow; ctx.shadowBlur=5;
+  // top-left ramp
+  ctx.beginPath(); ctx.moveTo(w*.2,h/2); ctx.quadraticCurveTo(w*.3,h*.3,w*.45,h*.3); ctx.stroke();
+  // top-right ramp
+  ctx.beginPath(); ctx.moveTo(w*.75,h/2); ctx.quadraticCurveTo(w*.65,h*.3,w*.45,h*.3); ctx.stroke();
+  // bottom-left ramp
+  ctx.beginPath(); ctx.moveTo(w*.2,h/2); ctx.quadraticCurveTo(w*.3,h*.7,w*.45,h*.7); ctx.stroke();
+  // bottom-right ramp
+  ctx.beginPath(); ctx.moveTo(w*.75,h/2); ctx.quadraticCurveTo(w*.65,h*.7,w*.45,h*.7); ctx.stroke();
+
+  // Dashed center lines
+  ctx.setLineDash([4,6]); ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1; ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.moveTo(10,h/2); ctx.lineTo(w-10,h/2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(w*.45,10); ctx.lineTo(w*.45,h-10); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Start/finish marker
+  ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(w*.15,h/2-6); ctx.lineTo(w*.15,h/2+6); ctx.stroke();
+
+  // Car dot (animated position)
+  const t=Date.now()*0.0005;
+  const cx=w*.15+Math.cos(t)*w*.28, cy=h/2;
+  ctx.fillStyle='#7aff5a'; ctx.shadowBlur=12; ctx.shadowColor='#7aff5a';
+  ctx.beginPath(); ctx.arc(cx,cy,4.5,0,Math.PI*2); ctx.fill();
   ctx.shadowBlur=0;
-  // Label
-  ctx.fillStyle='rgba(122,255,90,.35)'; ctx.font='bold 7px Orbitron,monospace';
-  ctx.textAlign='center'; ctx.fillText('WESTERN CANYON',w/2,h-6);
+
+  // Map label
+  ctx.fillStyle='rgba(122,255,90,.3)'; ctx.font='bold 7px Orbitron,monospace';
+  ctx.textAlign='center'; ctx.fillText('HIGHWAY INTERCHANGE',w/2,h-5);
+
+  // Animate
+  requestAnimationFrame(drawMenuMinimap);
 }
 
 /* ================================================================
